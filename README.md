@@ -7,7 +7,7 @@
 Add this repository URL in the app: **Settings → Extensions → Add Repository**
 
 ```
-https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/master/repository.json
+https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/repository.json
 ```
 
 ## 🛠️ Usage
