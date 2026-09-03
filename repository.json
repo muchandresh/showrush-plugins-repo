@@ -1,0 +1,81 @@
+{
+  "id": "com.showrush.community",
+  "name": "Showrush Official Community Repository",
+  "author": "Showrush Community",
+  "version": "2.1.0",
+  "description": "High-performance direct HLS, Anime, and Multi-Language streaming extensions powered by Showrush Extractor SDK.",
+  "plugins": [
+    {
+      "id": "com.community.vidsrc-direct",
+      "name": "VidSrc Direct Stream (WASM/HLS)",
+      "version": "2.1.0",
+      "author": "Showrush Community",
+      "description": "Ad-free direct master.m3u8 HLS streams with 1080p/720p qualities & subtitles via in-memory WASM ChaCha20.",
+      "types": ["movie", "tv"],
+      "scriptUrl": "/plugins/vidsrc-direct.js"
+    },
+    {
+      "id": "com.community.vixsrc",
+      "name": "VixSrc Direct HLS",
+      "version": "1.0.0",
+      "author": "Community",
+      "description": "High-speed direct master.m3u8 HLS streams with multi-resolution playback.",
+      "types": ["movie", "tv"],
+      "scriptUrl": "/plugins/vixsrc.js"
+    },
+    {
+      "id": "com.community.vidnest-anime",
+      "name": "Vidnest Anime Multi-Server",
+      "version": "1.2.0",
+      "author": "Community",
+      "description": "Vidnest Anime streaming with AniList mapping and Satoru, Pahe, Anya, and Miko servers.",
+      "types": ["tv", "movie", "anime"],
+      "scriptUrl": "/plugins/vidnest-anime.js"
+    },
+    {
+      "id": "com.community.anidb",
+      "name": "Ani-DB Anime (Sub/Dub)",
+      "version": "2.0.0",
+      "author": "Showrush Community",
+      "description": "Dedicated high-speed Anime streaming provider with Japanese Romaji lookup, SUB & DUB audio, and WebVTT captions.",
+      "types": ["movie", "tv", "anime"],
+      "scriptUrl": "/plugins/anidb.js"
+    },
+    {
+      "id": "com.community.castle",
+      "name": "Castle Multi-Language HD",
+      "version": "2.1.0",
+      "author": "Showrush Community",
+      "description": "High-speed multi-language direct streaming provider with Multi-Audio & Subtitles support.",
+      "types": ["movie", "tv"],
+      "scriptUrl": "/plugins/castle.js"
+    },
+    {
+      "id": "com.community.superstream",
+      "name": "SuperStream & AutoEmbed HD",
+      "version": "1.5.0",
+      "author": "Showrush Community",
+      "description": "Fast adaptive bitrate HLS resolver with multi-server CDN redundancy.",
+      "types": ["movie", "tv"],
+      "scriptUrl": "/plugins/superstream.js"
+    },
+    {
+      "id": "com.community.dramacool",
+      "name": "DramaCool (Asian Cinema)",
+      "version": "1.0.0",
+      "author": "Showrush Community",
+      "description": "Native streaming provider for Korean, Japanese & Chinese Dramas with live episode catalog feeds.",
+      "types": ["tv", "movie"],
+      "scriptUrl": "/plugins/dramacool.js"
+    },
+    {
+      "id": "com.community.vegamovies",
+      "name": "VegaMovies (Hindi & OTT)",
+      "version": "1.0.0",
+      "author": "Showrush Community (CSX)",
+      "description": "Dual Audio Bollywood, Hollywood Hindi Dubbed, Netflix, Hotstar & Prime Video releases with dynamic domain failover.",
+      "types": ["movie", "tv", "anime"],
+      "scriptUrl": "/plugins/vegamovies.js"
+    }
+  ]
+}
