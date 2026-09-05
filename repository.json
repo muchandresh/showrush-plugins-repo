@@ -2,7 +2,7 @@
   "id": "com.showrush.community",
   "name": "Showrush Official Community Repository",
   "author": "Showrush Community",
-  "version": "3.1.0",
+  "version": "3.2.0",
   "description": "High-performance direct HLS, Anime, Indian Cinema, and Multi-Language streaming extensions powered by Showrush Extractor SDK.",
   "plugins": [
     {
@@ -125,6 +125,28 @@
       "languages": ["ja", "en"],
       "category": "plugin",
       "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/vidnest-anime.js"
+    },
+    {
+      "id": "com.community.anivexa",
+      "name": "Anivexa Anime Engine Pro",
+      "version": "1.0.0",
+      "author": "Anivexa Community",
+      "description": "Ultimate Anime streaming powerhouse featuring real-time seasonal simulcasts, AniList GraphQL trending charts, genre exploration, and multi-server Sub/Dub HLS playback.",
+      "types": ["anime"],
+      "languages": ["ja", "en", "all"],
+      "category": "pro_plugin",
+      "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/anivexa.js"
+    },
+    {
+      "id": "com.community.resolvers",
+      "name": "Showrush Community Resolvers",
+      "version": "1.0.0",
+      "author": "Showrush Community",
+      "description": "Universal cyberlocker and extractor pack (HubCloud, StreamWish, FileLions, DoodStream, Streamtape, Pixeldrain) with dynamic AniList title mapping.",
+      "types": ["movie", "tv", "anime"],
+      "languages": ["all"],
+      "category": "plugin",
+      "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/resolvers.js"
     },
     {
       "id": "com.community.vidsrc-direct",
