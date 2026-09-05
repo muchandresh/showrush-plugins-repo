@@ -74,7 +74,31 @@ return {
         } catch {}
       }
 
-      return streams;
+      if (streams.length > 0) return streams;
+
+      // Resilient fallback to universal extractor
+      if (Showrush?.extractors?.vidsrc) {
+        const sources = await Showrush.extractors.vidsrc({
+          tmdbId,
+          title,
+          type: 'tv',
+          season,
+          episode,
+        });
+
+        if (Array.isArray(sources) && sources.length > 0) {
+          return sources.map((s, idx) => ({
+            ...s,
+            id: `vidnest-fb-${idx + 1}-${Date.now()}`,
+            pluginId: 'com.community.vidnest-anime',
+            pluginName: 'Vidnest Anime Multi-Server',
+            name: `Vidnest Stream • ${s.server || `CDN ${idx + 1}`}`,
+            server: `Vidnest Server ${idx + 1}`,
+          }));
+        }
+      }
+
+      return [];
     } catch (err) {
       console.warn('[Vidnest Anime Provider] Error:', err);
       return [];

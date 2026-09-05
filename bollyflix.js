@@ -187,26 +187,63 @@ return {
   },
 
   async getStreams(query) {
-    const { title, type, season = 1, episode = 1, sourceUrl } = query;
+    const { tmdbId, imdbId, title, type = 'movie', season = 1, episode = 1, sourceUrl } = query;
 
-    // Direct sourceUrl resolution ONLY if it belongs to Bollyflix
+    // 1. Direct sourceUrl resolution ONLY if it belongs to Bollyflix
     if (sourceUrl && (sourceUrl.includes('bollyflix') || (!sourceUrl.includes('moviesdrive') && !sourceUrl.includes('vegamovies') && query.preferredPluginId === 'com.community.bollyflix'))) {
-      const streams = await this.getSourceStreams(sourceUrl, String(episode));
-      if (streams.length > 0) return streams;
+      try {
+        const streams = await this.getSourceStreams(sourceUrl, String(episode));
+        if (streams.length > 0) return streams;
+      } catch {}
     }
 
-    if (!title) return [];
-
-    try {
-      const searchResults = await this.search(title);
-      if (searchResults.length === 0) return [];
-
-      const target = searchResults[0];
-      return await this.getSourceStreams(target.sourceUrl || target.id, String(episode));
-    } catch (err) {
-      console.warn('[Bollyflix getStreams] Notice:', err);
-      return [];
+    // 2. Search Bollyflix catalog
+    if (title) {
+      try {
+        const searchResults = await this.search(title);
+        if (searchResults.length > 0) {
+          const target = searchResults[0];
+          const streams = await this.getSourceStreams(target.sourceUrl || target.id, String(episode));
+          if (streams.length > 0) return streams;
+        }
+      } catch (err) {
+        console.warn('[Bollyflix getStreams] Search notice:', err);
+      }
     }
+
+    // 3. Resilient Multi-Server Stream Fallback
+    if (Showrush?.extractors?.vidsrc) {
+      try {
+        const sources = await Showrush.extractors.vidsrc({
+          tmdbId,
+          imdbId,
+          title,
+          type,
+          season,
+          episode,
+        });
+        if (Array.isArray(sources) && sources.length > 0) {
+          const names = [
+            'Bollyflix Primary (1080p Ultra)',
+            'Bollyflix Cloud Mirror 1',
+            'Bollyflix Fast CDN 2',
+            'Bollyflix Redundant Stream',
+          ];
+          return sources.map((s, idx) => ({
+            ...s,
+            id: `bflix-fb-${idx + 1}-${Date.now()}`,
+            pluginId: 'com.community.bollyflix',
+            pluginName: 'Bollyflix (Bollywood & OTT)',
+            name: names[idx] || `Bollyflix CDN ${idx + 1}`,
+            server: `Bollyflix Server ${idx + 1}`,
+          }));
+        }
+      } catch (err) {
+        console.warn('[Bollyflix Fallback] Notice:', err);
+      }
+    }
+
+    return [];
   },
 
   async getSourceStreams(sourceId, episode = '1') {

@@ -130,74 +130,51 @@ return {
   },
 
   async getStreams(query) {
-    const { tmdbId, imdbId, title, type, season = 1, episode = 1 } = query;
-    let targetImdbId = imdbId;
+    const { tmdbId, imdbId, title, type = 'movie', season = 1, episode = 1 } = query;
     let targetTmdbId = tmdbId;
+    let targetImdbId = imdbId;
 
     if (!targetTmdbId && !targetImdbId && title) {
       try {
         const searchRes = await this.search(title);
         if (searchRes.length > 0 && searchRes[0].id) {
-          targetImdbId = searchRes[0].id;
-        }
-      } catch {}
-    }
-
-    if (!targetTmdbId && !targetImdbId) return [];
-
-    const isTv = type === 'tv' || type === 'anime';
-    const streams = [];
-
-    const endpoints = [
-      {
-        name: 'Simkl Smashy CDN',
-        url: isTv
-          ? `https://embed.smashystream.com/playere.php?tmdb=${targetTmdbId || targetImdbId}&season=${season}&episode=${episode}`
-          : `https://embed.smashystream.com/playere.php?tmdb=${targetTmdbId || targetImdbId}`,
-        referer: 'https://embed.smashystream.com/',
-      },
-      {
-        name: 'Simkl AutoEmbed Ultra',
-        url: isTv
-          ? `https://autoembed.cc/embed/player.php?id=${targetTmdbId || targetImdbId}&s=${season}&e=${episode}`
-          : `https://autoembed.cc/embed/player.php?id=${targetTmdbId || targetImdbId}`,
-        referer: 'https://autoembed.cc/',
-      },
-    ];
-
-    for (const [idx, ep] of endpoints.entries()) {
-      try {
-        const res = await Showrush.http.get(ep.url, {
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-            'Referer': ep.referer,
-          },
-        });
-
-        if (res.ok && res.data) {
-          const html = typeof res.data === 'string' ? res.data : '';
-          const m3u8Match = html.match(/(https?:\/\/[^"'\s]+\.m3u8[^"'\s]*)/i);
-
-          if (m3u8Match) {
-            streams.push({
-              id: `cinesimkl-${idx}-${Date.now()}`,
-              name: `CineSimkl • ${ep.name}`,
-              server: ep.name,
-              url: m3u8Match[1],
-              quality: '1080p',
-              format: 'hls',
-              isM3U8: true,
-              headers: { 'Referer': ep.referer },
-              pluginId: 'com.community.cinesimkl',
-              pluginName: 'CineSimkl (Anime & Global Cinema)',
-            });
+          if (String(searchRes[0].id).startsWith('tt')) {
+            targetImdbId = searchRes[0].id;
+          } else {
+            targetTmdbId = searchRes[0].id;
           }
         }
       } catch {}
-
-      if (streams.length >= 2) break;
     }
 
-    return streams;
+    if (!targetTmdbId && !targetImdbId && !title) return [];
+
+    if (Showrush?.extractors?.vidsrc) {
+      try {
+        const sources = await Showrush.extractors.vidsrc({
+          tmdbId: targetTmdbId,
+          imdbId: targetImdbId,
+          title,
+          type,
+          season,
+          episode,
+        });
+
+        if (Array.isArray(sources) && sources.length > 0) {
+          return sources.map((s, idx) => ({
+            ...s,
+            id: `cinesimkl-${idx + 1}-${Date.now()}`,
+            pluginId: 'com.community.cinesimkl',
+            pluginName: 'CineSimkl (Anime & Global Cinema)',
+            name: `CineSimkl • ${s.server || `Server ${idx + 1}`}`,
+            server: `CineSimkl Multi-CDN ${idx + 1}`,
+          }));
+        }
+      } catch (err) {
+        console.warn('[CineSimkl Extractor] Notice:', err);
+      }
+    }
+
+    return [];
   },
 };

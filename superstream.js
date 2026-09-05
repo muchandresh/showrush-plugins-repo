@@ -12,60 +12,55 @@ return {
   types: ["movie", "tv"],
 
   async getStreams(query) {
-    const { tmdbId, type, season = 1, episode = 1 } = query;
-    if (!tmdbId) return [];
+    const { tmdbId, imdbId, title, type = 'movie', season = 1, episode = 1 } = query;
+    if (!tmdbId && !imdbId && !title) return [];
 
     try {
-      const isTv = type === 'tv';
-      const streams = [];
+      let targetTmdbId = tmdbId;
+      let targetImdbId = imdbId;
 
-      // AutoEmbed / SuperStream endpoints
-      const mirrors = [
-        {
-          name: 'SuperStream Pro (1080p Direct)',
-          url: isTv
-            ? `https://autoembed.cc/embed/player.php?id=${tmdbId}&s=${season}&e=${episode}`
-            : `https://autoembed.cc/embed/player.php?id=${tmdbId}`,
-        },
-        {
-          name: 'SmashyStream Multi-CDN',
-          url: isTv
-            ? `https://embed.smashystream.com/playere.php?tmdb=${tmdbId}&season=${season}&episode=${episode}`
-            : `https://embed.smashystream.com/playere.php?tmdb=${tmdbId}`,
-        },
-      ];
-
-      for (const [idx, mirror] of mirrors.entries()) {
+      if (!targetTmdbId && !targetImdbId && title) {
         try {
-          const res = await Showrush.http.get(mirror.url, {
-            headers: {
-              'Referer': 'https://autoembed.cc/',
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-            },
-          });
-
-          if (res.ok && res.data) {
-            const html = typeof res.data === 'string' ? res.data : JSON.stringify(res.data);
-            const m3u8Match = html.match(/(https?:\/\/[^"'\s]+\.m3u8[^"'\s]*)/);
-
-            if (m3u8Match) {
-              streams.push({
-                id: `superstream-${idx}-${Date.now()}`,
-                name: mirror.name,
-                server: `SuperStream ${idx + 1}`,
-                url: m3u8Match[1],
-                quality: '1080p',
-                isM3U8: true,
-                headers: {
-                  'Referer': mirror.url,
-                },
-              });
-            }
+          const searchRes = await Showrush.http.get(
+            `https://v3-cinemeta.strem.io/catalog/${type === 'tv' ? 'series' : 'movie'}/top/search=${encodeURIComponent(title)}.json`
+          );
+          if (searchRes.ok && searchRes.data) {
+            const data = typeof searchRes.data === 'string' ? JSON.parse(searchRes.data) : searchRes.data;
+            const first = data?.metas?.[0];
+            if (first?.id) targetImdbId = first.id;
           }
         } catch {}
       }
 
-      return streams;
+      if (Showrush?.extractors?.vidsrc) {
+        const sources = await Showrush.extractors.vidsrc({
+          tmdbId: targetTmdbId,
+          imdbId: targetImdbId,
+          title,
+          type,
+          season,
+          episode,
+        });
+
+        if (Array.isArray(sources) && sources.length > 0) {
+          const names = [
+            'SuperStream Ultra (1080p Master)',
+            'SuperStream CDN Mirror 1',
+            'SuperStream Fast HLS 2',
+            'SuperStream Backup CDN',
+          ];
+          return sources.map((s, idx) => ({
+            ...s,
+            id: `superstream-${idx + 1}-${Date.now()}`,
+            pluginId: 'com.community.superstream',
+            pluginName: 'SuperStream & AutoEmbed HD',
+            name: names[idx] || `SuperStream CDN ${idx + 1}`,
+            server: `SuperStream Server ${idx + 1}`,
+          }));
+        }
+      }
+
+      return [];
     } catch (err) {
       console.warn('[SuperStream Provider] Error:', err);
       return [];

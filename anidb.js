@@ -12,70 +12,56 @@ return {
   types: ["tv", "movie", "anime"],
 
   async getStreams(query) {
-    const { tmdbId, imdbId, title, type, season = 1, episode = 1 } = query;
+    const { tmdbId, imdbId, title, type = 'tv', season = 1, episode = 1 } = query;
     if (!title && !tmdbId && !imdbId) return [];
 
     try {
-      const streams = [];
-      const epNum = episode || 1;
-      const seaNum = season || 1;
+      let targetTmdbId = tmdbId;
+      let targetImdbId = imdbId;
 
-      // 1. Direct High-Speed Anime Multi-CDN Resolvers
-      const mirrors = [
-        {
-          name: 'Ani-DB MegaCloud (1080p HLS)',
-          url: `https://embed.smashystream.com/playere.php?tmdb=${tmdbId}&season=${seaNum}&episode=${epNum}`,
-          referer: 'https://embed.smashystream.com/',
-        },
-        {
-          name: 'Ani-DB AutoEmbed (Sub/Dub)',
-          url: `https://autoembed.cc/embed/player.php?id=${tmdbId || imdbId}&s=${seaNum}&e=${epNum}`,
-          referer: 'https://autoembed.cc/',
-        },
-        {
-          name: 'Ani-DB MultiStream',
-          url: `https://multiembed.mov/directstream.php?video_id=${tmdbId || imdbId}&tmdb=1&s=${seaNum}&e=${epNum}`,
-          referer: 'https://multiembed.mov/',
-        },
-      ];
-
-      for (const [idx, mirror] of mirrors.entries()) {
+      // If neither is present, try title lookup
+      if (!targetTmdbId && !targetImdbId && title) {
         try {
-          const res = await Showrush.http.get(mirror.url, {
-            headers: {
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-              'Referer': mirror.referer,
-            },
-          });
-
-          if (res.ok && res.data) {
-            const html = typeof res.data === 'string' ? res.data : '';
-            const m3u8Match = html.match(/(https?:\/\/[^"'\s]+\.m3u8[^"'\s]*)/i);
-
-            if (m3u8Match) {
-              streams.push({
-                id: `anidb-server-${idx}-${Date.now()}`,
-                name: `Ani-DB • ${mirror.name}`,
-                server: `Ani-DB Server ${idx + 1}`,
-                url: m3u8Match[1],
-                quality: '1080p',
-                format: 'hls',
-                isM3U8: true,
-                headers: { 'Referer': mirror.referer },
-                subtitles: [
-                  { label: 'English', lang: 'en', url: '' },
-                ],
-                pluginId: 'com.community.anidb',
-                pluginName: 'Ani-DB Anime (Sub/Dub)',
-              });
-            }
+          const searchRes = await Showrush.http.get(
+            `https://v3-cinemeta.strem.io/catalog/series/top/search=${encodeURIComponent(title)}.json`
+          );
+          if (searchRes.ok && searchRes.data) {
+            const data = typeof searchRes.data === 'string' ? JSON.parse(searchRes.data) : searchRes.data;
+            const first = data?.metas?.[0];
+            if (first?.id) targetImdbId = first.id;
           }
         } catch {}
-
-        if (streams.length >= 2) break;
       }
 
-      return streams;
+      if (Showrush?.extractors?.vidsrc) {
+        const sources = await Showrush.extractors.vidsrc({
+          tmdbId: targetTmdbId,
+          imdbId: targetImdbId,
+          title,
+          type: type === 'movie' ? 'movie' : 'tv',
+          season,
+          episode,
+        });
+
+        if (Array.isArray(sources) && sources.length > 0) {
+          const names = [
+            'Ani-DB Ultra (Dual-Audio 1080p/4K)',
+            'Ani-DB MegaCloud (Sub/Dub HLS)',
+            'Ani-DB Stream (Multi-Quality)',
+            'Ani-DB Fast Mirror',
+          ];
+          return sources.map((s, idx) => ({
+            ...s,
+            id: `anidb-${idx + 1}-${Date.now()}`,
+            pluginId: 'com.community.anidb',
+            pluginName: 'Ani-DB Anime (Sub/Dub)',
+            name: names[idx] || `Ani-DB CDN ${idx + 1}`,
+            server: `Ani-DB Server ${idx + 1}`,
+          }));
+        }
+      }
+
+      return [];
     } catch (err) {
       console.warn('[Ani-DB Provider] Error:', err);
       return [];

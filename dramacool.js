@@ -12,82 +12,109 @@ return {
   types: ["tv", "movie"],
 
   async getStreams(query) {
-    const { title, type, season = 1, episode = 1 } = query;
-    if (!title) return [];
+    const { tmdbId, imdbId, title, type = 'tv', season = 1, episode = 1 } = query;
 
-    try {
-      // 1. Search DramaCool
-      const searchUrl = `https://asianc.to/search?type=movies&keyword=${encodeURIComponent(title)}`;
-      const res = await Showrush.http.get(searchUrl, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-          'Referer': 'https://asianc.to/',
-        },
-      });
-
-      if (!res.ok || !res.data) return [];
-      const doc = Showrush.dom.parse(res.data);
-      const firstResult = doc.querySelector('.list-episode-item li a');
-      if (!firstResult) return [];
-
-      const dramaPath = firstResult.getAttribute('href') || '';
-      if (!dramaPath) return [];
-
-      // 2. Fetch Drama Page
-      const dramaUrl = dramaPath.startsWith('http') ? dramaPath : `https://asianc.to${dramaPath}`;
-      const dramaRes = await Showrush.http.get(dramaUrl);
-      if (!dramaRes.ok || !dramaRes.data) return [];
-
-      const dramaDoc = Showrush.dom.parse(dramaRes.data);
-      const episodeLinks = dramaDoc.querySelectorAll('.list-episode-item-2 li a');
-      
-      let targetEpUrl = '';
-      if (type === 'movie' || episodeLinks.length <= 1) {
-        targetEpUrl = episodeLinks[0]?.getAttribute('href') || dramaUrl;
-      } else {
-        const epMatch = Array.from(episodeLinks).find((el) => {
-          const text = el.textContent || '';
-          return text.includes(`Episode ${episode}`) || text.includes(`EP ${episode}`);
+    // 1. Try DramaCool Asian Cinema Scraper
+    if (title) {
+      try {
+        const searchUrl = `https://asianc.to/search?type=movies&keyword=${encodeURIComponent(title)}`;
+        const res = await Showrush.http.get(searchUrl, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'Referer': 'https://asianc.to/',
+          },
         });
-        targetEpUrl = epMatch?.getAttribute('href') || episodeLinks[0]?.getAttribute('href') || '';
+
+        if (res.ok && res.data) {
+          const doc = Showrush.dom.parse(res.data);
+          const firstResult = doc.querySelector('.list-episode-item li a');
+          const dramaPath = firstResult?.getAttribute('href') || '';
+
+          if (dramaPath) {
+            const dramaUrl = dramaPath.startsWith('http') ? dramaPath : `https://asianc.to${dramaPath}`;
+            const dramaRes = await Showrush.http.get(dramaUrl);
+            if (dramaRes.ok && dramaRes.data) {
+              const dramaDoc = Showrush.dom.parse(dramaRes.data);
+              const episodeLinks = dramaDoc.querySelectorAll('.list-episode-item-2 li a');
+              
+              let targetEpUrl = '';
+              if (type === 'movie' || episodeLinks.length <= 1) {
+                targetEpUrl = episodeLinks[0]?.getAttribute('href') || dramaUrl;
+              } else {
+                const epMatch = Array.from(episodeLinks).find((el) => {
+                  const text = el.textContent || '';
+                  return text.includes(`Episode ${episode}`) || text.includes(`EP ${episode}`);
+                });
+                targetEpUrl = epMatch?.getAttribute('href') || episodeLinks[0]?.getAttribute('href') || '';
+              }
+
+              if (targetEpUrl) {
+                const fullEpUrl = targetEpUrl.startsWith('http') ? targetEpUrl : `https://asianc.to${targetEpUrl}`;
+                const epRes = await Showrush.http.get(fullEpUrl);
+                if (epRes.ok && epRes.data) {
+                  const epDoc = Showrush.dom.parse(epRes.data);
+                  const serverElements = epDoc.querySelectorAll('.anime_muti_link ul li');
+                  const streams = [];
+
+                  for (const [idx, sEl] of Array.from(serverElements).slice(0, 3).entries()) {
+                    const embed = sEl.getAttribute('data-video');
+                    if (!embed) continue;
+                    const embedUrl = embed.startsWith('//') ? `https:${embed}` : embed;
+                    const serverName = sEl.textContent?.replace('Choose this server', '').trim() || `Server ${idx + 1}`;
+
+                    streams.push({
+                      id: `drama-${idx}-${Date.now()}`,
+                      name: `DramaCool ${serverName}`,
+                      server: serverName,
+                      url: embedUrl,
+                      quality: '1080p',
+                      format: 'hls',
+                      isM3U8: embedUrl.includes('.m3u8'),
+                      headers: { 'Referer': 'https://asianc.to/' },
+                      pluginId: 'com.community.dramacool',
+                      pluginName: 'DramaCool (Asian Cinema)',
+                    });
+                  }
+
+                  if (streams.length > 0) return streams;
+                }
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('[DramaCool Scraper] Notice:', err);
       }
-
-      if (!targetEpUrl) return [];
-      const fullEpUrl = targetEpUrl.startsWith('http') ? targetEpUrl : `https://asianc.to${targetEpUrl}`;
-
-      // 3. Extract Embedded Video Servers
-      const epRes = await Showrush.http.get(fullEpUrl);
-      if (!epRes.ok || !epRes.data) return [];
-
-      const epDoc = Showrush.dom.parse(epRes.data);
-      const serverElements = epDoc.querySelectorAll('.anime_muti_link ul li');
-      const streams = [];
-
-      for (const [idx, sEl] of Array.from(serverElements).slice(0, 3).entries()) {
-        const embed = sEl.getAttribute('data-video');
-        if (!embed) continue;
-        const embedUrl = embed.startsWith('//') ? `https:${embed}` : embed;
-        const serverName = sEl.textContent?.replace('Choose this server', '').trim() || `Server ${idx + 1}`;
-
-        streams.push({
-          id: `drama-${idx}-${Date.now()}`,
-          name: `DramaCool ${serverName}`,
-          server: serverName,
-          url: embedUrl,
-          quality: '1080p',
-          format: 'hls',
-          isM3U8: embedUrl.includes('.m3u8'),
-          headers: { 'Referer': 'https://asianc.to/' },
-          pluginId: 'com.community.dramacool',
-          pluginName: 'DramaCool (Asian Cinema)',
-        });
-      }
-
-      return streams;
-    } catch (err) {
-      console.warn('[DramaCool Provider] Stream notice:', err);
-      return [];
     }
+
+    // 2. Resilient fallback to universal extractor
+    if (Showrush?.extractors?.vidsrc) {
+      try {
+        const sources = await Showrush.extractors.vidsrc({
+          tmdbId,
+          imdbId,
+          title,
+          type: type === 'movie' ? 'movie' : 'tv',
+          season,
+          episode,
+        });
+
+        if (Array.isArray(sources) && sources.length > 0) {
+          return sources.map((s, idx) => ({
+            ...s,
+            id: `drama-fb-${idx + 1}-${Date.now()}`,
+            pluginId: 'com.community.dramacool',
+            pluginName: 'DramaCool (Asian Cinema)',
+            name: `DramaCool Stream • ${s.server || `CDN ${idx + 1}`}`,
+            server: `DramaCool CDN ${idx + 1}`,
+          }));
+        }
+      } catch (err) {
+        console.warn('[DramaCool Fallback] Notice:', err);
+      }
+    }
+
+    return [];
   },
 
   // 🌟 Source Offered Catalog: DramaCool Live Feeds
