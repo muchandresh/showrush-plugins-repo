@@ -17,74 +17,80 @@ return {
     if (!title && !tmdbId && !imdbId) return [];
 
     try {
-      let targetTmdbId = tmdbId;
-      let targetImdbId = imdbId;
-
-      // 1. Primary Direct 1080p Anime Extractor (AniBD / AnimeApps top - SUB & DUB)
-      if (Showrush?.extractors?.anibd) {
+      const BASE = 'https://epeng.animeapps.top';
+      let targetId = query.anilistId;
+      if (!targetId && title && Showrush?.anime?.getMapping) {
         try {
-          const aniStreams = await Showrush.extractors.anibd({
-            anilistId: query.anilistId,
-            title,
-            episode,
+          const m = await Showrush.anime.getMapping(title);
+          if (m && m.anilistId) targetId = m.anilistId;
+        } catch {}
+      }
+      if (!targetId) return [];
+
+      const epNum = Number(episode) || 1;
+      const serversRes = await http.get(`${BASE}/api2.php?epid=${targetId}`, {
+        headers: { Accept: 'application/json' },
+      });
+      if (!serversRes.ok || !Array.isArray(serversRes.data)) return [];
+
+      const epPad = String(epNum).padStart(2, '0');
+      const epTargets = [];
+
+      for (const group of serversRes.data) {
+        const isDub = /dub/i.test(group.server_name || '');
+        const audio = isDub ? 'Dub' : 'Sub';
+        for (const ep of group.server_data || []) {
+          if (Number(ep.name) === epNum || ep.slug === epPad || ep.name === String(epNum)) {
+            if (ep.link) {
+              epTargets.push({ link: ep.link, audio });
+              break;
+            }
+          }
+        }
+      }
+
+      if (epTargets.length === 0) return [];
+
+      const streams = [];
+      for (const target of epTargets) {
+        try {
+          const linksRes = await http.get(`${BASE}/apilink.php?data=${encodeURIComponent(target.link)}`, {
+            headers: { Accept: 'application/json' },
           });
-          if (Array.isArray(aniStreams) && aniStreams.length > 0) {
-            return aniStreams.map((s, idx) => ({
-              ...s,
-              id: `anidb-native-${idx + 1}-${Date.now()}`,
-              pluginId: 'com.community.anidb',
-              pluginName: 'Ani-DB Anime (Sub/Dub)',
-            }));
+          if (!linksRes.ok || !Array.isArray(linksRes.data)) continue;
+
+          for (const [idx, srv] of linksRes.data.entries()) {
+            if (!srv.link) continue;
+            const origin = new URL(srv.link).origin;
+            const htmlRes = await http.get(srv.link, {
+              headers: { Referer: `${origin}/`, 'User-Agent': 'Mozilla/5.0' },
+            });
+            if (!htmlRes.ok || typeof htmlRes.data !== 'string') continue;
+
+            const m = htmlRes.data.match(/videoUrl\s*:\s*["\x27]([^"\x27]+)["\x27]/);
+            if (m) {
+              const raw = m[1];
+              const streamUrl = raw.startsWith('http') ? raw : `${origin}${raw.startsWith('/') ? '' : '/'}${raw}`;
+              if (!streams.some((s) => s.url === streamUrl)) {
+                streams.push({
+                  id: `anidb-${target.audio.toLowerCase()}-${idx}-${Date.now()}`,
+                  pluginId: 'com.community.anidb',
+                  pluginName: 'Ani-DB Anime (Sub/Dub)',
+                  name: `Ani-DB ${srv.server || 'Primary'} (${target.audio} 1080p)`,
+                  server: `Ani-DB ${srv.server || 'Server'} [${target.audio}]`,
+                  url: streamUrl,
+                  quality: '1080p',
+                  format: 'hls',
+                  isM3U8: true,
+                  headers: { Referer: `${origin}/` },
+                });
+              }
+            }
           }
         } catch {}
       }
 
-      // If neither ID is present, try title lookup for fallback
-      if (!targetTmdbId && !targetImdbId && title) {
-        try {
-          const searchRes = await Showrush.http.get(
-            `https://v3-cinemeta.strem.io/catalog/series/top/search=${encodeURIComponent(title)}.json`
-          );
-          if (searchRes.ok && searchRes.data) {
-            const data = typeof searchRes.data === 'string' ? JSON.parse(searchRes.data) : searchRes.data;
-            const first = data?.metas?.[0];
-            if (first?.id) targetImdbId = first.id;
-          }
-        } catch {}
-      }
-
-      // 2. High-Speed Multi-Server HLS Extractor (VidSrc fallback for anime)
-      if (Showrush?.extractors?.vidsrc) {
-        try {
-          const sources = await Showrush.extractors.vidsrc({
-            tmdbId: targetTmdbId,
-            imdbId: targetImdbId,
-            title,
-            type: type === 'movie' ? 'movie' : 'tv',
-            season,
-            episode,
-          });
-
-          if (Array.isArray(sources) && sources.length > 0) {
-            const names = [
-              'Ani-DB Ultra (Dual-Audio 1080p/4K)',
-              'Ani-DB MegaCloud (Sub/Dub HLS)',
-              'Ani-DB Stream (Multi-Quality)',
-              'Ani-DB Fast Mirror',
-            ];
-            return sources.map((s, idx) => ({
-              ...s,
-              id: `anidb-${idx + 1}-${Date.now()}`,
-              pluginId: 'com.community.anidb',
-              pluginName: 'Ani-DB Anime (Sub/Dub)',
-              name: names[idx] || `Ani-DB CDN ${idx + 1}`,
-              server: `Ani-DB Server ${idx + 1}`,
-            }));
-          }
-        } catch {}
-      }
-
-      return [];
+      return streams;
     } catch (err) {
       console.warn('[Ani-DB Provider] Error:', err);
       return [];

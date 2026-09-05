@@ -95,25 +95,14 @@
     },
     {
       "id": "com.community.superstream",
-      "name": "SuperStream & AutoEmbed HD",
-      "version": "1.6.0",
+      "name": "SuperStream (Hollywood & Cinema Feeds)",
+      "version": "2.0.0",
       "author": "Showrush Community",
-      "description": "Fast adaptive bitrate HLS resolver with multi-server CDN redundancy.",
+      "description": "Curated Cinemeta Hollywood, trending box office, and top-rated movies and series catalog feeds.",
       "types": ["movie", "tv"],
       "languages": ["en", "all"],
-      "category": "plugin",
+      "category": "catalog",
       "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/superstream.js"
-    },
-    {
-      "id": "com.community.castle",
-      "name": "Castle Multi-Language HD",
-      "version": "2.2.0",
-      "author": "Showrush Community",
-      "description": "High-speed multi-language direct streaming provider with Multi-Audio & Subtitles support.",
-      "types": ["movie", "tv"],
-      "languages": ["all"],
-      "category": "plugin",
-      "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/castle.js"
     },
     {
       "id": "com.community.vixsrc",

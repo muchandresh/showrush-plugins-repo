@@ -151,54 +151,7 @@ return {
     }
   },
 
-  async getStreams(query) {
-    const { tmdbId, imdbId, title, type = 'movie', season = 1, episode = 1 } = query;
-    let targetTmdbId = tmdbId;
-    let targetImdbId = imdbId;
-
-    // 1. Fallback title lookup if both IDs are missing
-    if (!targetTmdbId && !targetImdbId && title) {
-      try {
-        const searchRes = await this.search(title);
-        if (searchRes.length > 0 && searchRes[0].id) {
-          if (String(searchRes[0].id).startsWith('tt')) {
-            targetImdbId = searchRes[0].id;
-          } else {
-            targetTmdbId = searchRes[0].id;
-          }
-        }
-      } catch {}
-    }
-
-    if (!targetTmdbId && !targetImdbId && !title) return [];
-
-    // 2. Resolve direct multi-server HLS streams via Showrush Universal Extractor
-    if (Showrush?.extractors?.vidsrc) {
-      try {
-        const sources = await Showrush.extractors.vidsrc({
-          tmdbId: targetTmdbId,
-          imdbId: targetImdbId,
-          title,
-          type,
-          season,
-          episode,
-        });
-
-        if (Array.isArray(sources) && sources.length > 0) {
-          return sources.map((s, idx) => ({
-            ...s,
-            id: `cs-${idx + 1}-${Date.now()}`,
-            pluginId: 'com.community.cinestream',
-            pluginName: 'CineStream (Cinemeta & Multi-CDN)',
-            name: `CineStream • ${s.server || `Server ${idx + 1}`}`,
-            server: `CineStream CDN ${idx + 1}`,
-          }));
-        }
-      } catch (err) {
-        console.warn('[CineStream Extractor] Notice:', err);
-      }
-    }
-
+  async getStreams() {
     return [];
   },
 };

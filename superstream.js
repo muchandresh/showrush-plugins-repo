@@ -11,60 +11,8 @@ return {
   description: "Fast adaptive bitrate HLS resolver with multi-server CDN redundancy.",
   types: ["movie", "tv"],
 
-  async getStreams(query) {
-    const { tmdbId, imdbId, title, type = 'movie', season = 1, episode = 1 } = query;
-    if (!tmdbId && !imdbId && !title) return [];
-
-    try {
-      let targetTmdbId = tmdbId;
-      let targetImdbId = imdbId;
-
-      if (!targetTmdbId && !targetImdbId && title) {
-        try {
-          const searchRes = await Showrush.http.get(
-            `https://v3-cinemeta.strem.io/catalog/${type === 'tv' ? 'series' : 'movie'}/top/search=${encodeURIComponent(title)}.json`
-          );
-          if (searchRes.ok && searchRes.data) {
-            const data = typeof searchRes.data === 'string' ? JSON.parse(searchRes.data) : searchRes.data;
-            const first = data?.metas?.[0];
-            if (first?.id) targetImdbId = first.id;
-          }
-        } catch {}
-      }
-
-      if (Showrush?.extractors?.vidsrc) {
-        const sources = await Showrush.extractors.vidsrc({
-          tmdbId: targetTmdbId,
-          imdbId: targetImdbId,
-          title,
-          type,
-          season,
-          episode,
-        });
-
-        if (Array.isArray(sources) && sources.length > 0) {
-          const names = [
-            'SuperStream Ultra (1080p Master)',
-            'SuperStream CDN Mirror 1',
-            'SuperStream Fast HLS 2',
-            'SuperStream Backup CDN',
-          ];
-          return sources.map((s, idx) => ({
-            ...s,
-            id: `superstream-${idx + 1}-${Date.now()}`,
-            pluginId: 'com.community.superstream',
-            pluginName: 'SuperStream & AutoEmbed HD',
-            name: names[idx] || `SuperStream CDN ${idx + 1}`,
-            server: `SuperStream Server ${idx + 1}`,
-          }));
-        }
-      }
-
-      return [];
-    } catch (err) {
-      console.warn('[SuperStream Provider] Error:', err);
-      return [];
-    }
+  async getStreams() {
+    return [];
   },
 
   // 🌟 Source Offered Catalog: Curated Hollywood & Cinema Feeds
