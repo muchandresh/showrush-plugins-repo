@@ -84,7 +84,8 @@ return {
   version: '2.0.0',
   author: 'Showrush Community (ported from CSX by SaurabhKaperwan)',
   description: 'Bollywood, Hollywood Hindi Dubbed, and South Indian Hindi releases with direct HubCloud & Pixeldrain streaming.',
-  types: ['movie', 'tv', 'anime'],
+  types: ['movie', 'tv'],
+  languages: ['hi'],
 
   // 🌟 Source Offered Catalog: Live Feeds
   async getCatalogFeeds(page = 1) {
@@ -188,11 +189,6 @@ return {
 
   async getStreams(query) {
     const { tmdbId, imdbId, title, type = 'movie', season = 1, episode = 1, sourceUrl } = query;
-
-    // Only resolve for Indian/Bollywood content or when explicitly requested
-    if (!query.isIndian && query.preferredPluginId !== 'com.community.bollyflix' && !sourceUrl?.includes('bollyflix')) {
-      return [];
-    }
 
     // 1. Direct sourceUrl resolution ONLY if it belongs to Bollyflix
     if (sourceUrl && (sourceUrl.includes('bollyflix') || (!sourceUrl.includes('moviesdrive') && !sourceUrl.includes('vegamovies') && query.preferredPluginId === 'com.community.bollyflix'))) {

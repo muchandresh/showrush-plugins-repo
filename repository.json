@@ -11,7 +11,8 @@
       "version": "2.5.0",
       "author": "Showrush Community (ported from CSX)",
       "description": "High-performance aggregator combining Cinemeta catalogs (Top Movies, Series, Anime, Genres) with multi-CDN direct streaming resolvers.",
-      "types": ["movie", "tv", "anime"],
+      "types": ["movie", "tv"],
+      "languages": ["en", "all"],
       "category": "pro_plugin",
       "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/cinestream.js"
     },
@@ -22,6 +23,7 @@
       "author": "Showrush Community (ported from CSX)",
       "description": "Simkl & MyAnimeList tracking catalogs (Airing Anime, Top Trending, Global Hits) with fast multi-server streaming.",
       "types": ["movie", "tv", "anime"],
+      "languages": ["all"],
       "category": "pro_plugin",
       "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/cinesimkl.js"
     },
@@ -31,7 +33,8 @@
       "version": "2.0.0",
       "author": "Showrush Community (ported from CSX)",
       "description": "OTT Network catalogs (Netflix, Prime, Hotstar, Indian Cinema, Korean Series) with fast multi-server streaming.",
-      "types": ["movie", "tv", "anime"],
+      "types": ["movie", "tv"],
+      "languages": ["all"],
       "category": "pro_plugin",
       "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/cinetmdb.js"
     },
@@ -41,7 +44,8 @@
       "version": "2.1.0",
       "author": "Showrush Community (CSX)",
       "description": "Dual Audio Bollywood, Hollywood Hindi Dubbed, Netflix, Hotstar & Prime Video releases with HubCloud & Pixeldrain streaming.",
-      "types": ["movie", "tv", "anime"],
+      "types": ["movie", "tv"],
+      "languages": ["hi"],
       "category": "pro_plugin",
       "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/vegamovies.js"
     },
@@ -51,7 +55,8 @@
       "version": "2.1.0",
       "author": "Showrush Community (CSX)",
       "description": "Dual Audio Bollywood, Hollywood, Netflix, Prime Video, Hotstar & K-Drama releases with direct HubCloud & Pixeldrain streaming.",
-      "types": ["movie", "tv", "anime"],
+      "types": ["movie", "tv"],
+      "languages": ["hi"],
       "category": "pro_plugin",
       "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/moviesdrive.js"
     },
@@ -61,7 +66,8 @@
       "version": "2.1.0",
       "author": "Showrush Community (CSX)",
       "description": "Bollywood, Hollywood Hindi Dubbed, and South Indian Hindi releases with direct HubCloud & Pixeldrain streaming.",
-      "types": ["movie", "tv", "anime"],
+      "types": ["movie", "tv"],
+      "languages": ["hi"],
       "category": "pro_plugin",
       "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/bollyflix.js"
     },
@@ -71,7 +77,8 @@
       "version": "2.2.0",
       "author": "Showrush Community",
       "description": "Dedicated high-speed Anime streaming provider with AniList simulcast catalogs, SUB & DUB audio, and WebVTT captions.",
-      "types": ["movie", "tv", "anime"],
+      "types": ["anime"],
+      "languages": ["ja", "en"],
       "category": "pro_plugin",
       "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/anidb.js"
     },
@@ -82,6 +89,7 @@
       "author": "Showrush Community",
       "description": "Native streaming provider for Korean, Japanese & Chinese Dramas with live episode catalog feeds.",
       "types": ["tv", "movie"],
+      "languages": ["ko", "zh", "ja"],
       "category": "pro_plugin",
       "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/dramacool.js"
     },
@@ -92,6 +100,7 @@
       "author": "Showrush Community",
       "description": "Fast adaptive bitrate HLS resolver with multi-server CDN redundancy.",
       "types": ["movie", "tv"],
+      "languages": ["en", "all"],
       "category": "plugin",
       "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/superstream.js"
     },
@@ -102,6 +111,7 @@
       "author": "Showrush Community",
       "description": "High-speed multi-language direct streaming provider with Multi-Audio & Subtitles support.",
       "types": ["movie", "tv"],
+      "languages": ["all"],
       "category": "plugin",
       "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/castle.js"
     },
@@ -112,6 +122,7 @@
       "author": "Community",
       "description": "High-speed direct master.m3u8 HLS streams with multi-resolution playback.",
       "types": ["movie", "tv"],
+      "languages": ["en", "all"],
       "category": "plugin",
       "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/vixsrc.js"
     },
@@ -121,7 +132,8 @@
       "version": "1.3.0",
       "author": "Community",
       "description": "Vidnest Anime streaming with AniList mapping and Satoru, Pahe, Anya, and Miko servers.",
-      "types": ["tv", "movie", "anime"],
+      "types": ["anime"],
+      "languages": ["ja", "en"],
       "category": "plugin",
       "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/vidnest-anime.js"
     },
@@ -132,6 +144,7 @@
       "author": "Showrush Community",
       "description": "Ad-free direct master.m3u8 HLS streams with 1080p/720p qualities & subtitles via in-memory WASM ChaCha20.",
       "types": ["movie", "tv"],
+      "languages": ["en", "all"],
       "category": "plugin",
       "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/vidsrc-direct.js"
     }

@@ -83,7 +83,8 @@ return {
   version: '2.0.0',
   author: 'Showrush Community (ported from CSX)',
   description: 'Dual Audio Bollywood, Hollywood, Netflix, Prime Video, Hotstar & K-Drama releases with direct HubCloud & Pixeldrain streaming.',
-  types: ['movie', 'tv', 'anime'],
+  types: ['movie', 'tv'],
+  languages: ['hi'],
 
   // 🌟 Source Offered Catalog: Live Feeds
   async getCatalogFeeds(page = 1) {
@@ -205,11 +206,6 @@ return {
 
   async getStreams(query) {
     const { tmdbId, imdbId, title, type = 'movie', season = 1, episode = 1, sourceUrl } = query;
-
-    // Only resolve for Indian/Bollywood content or when explicitly requested
-    if (!query.isIndian && query.preferredPluginId !== 'com.community.moviesdrive' && !sourceUrl?.includes('moviesdrive')) {
-      return [];
-    }
 
     // 1. Direct sourceUrl resolution ONLY if it belongs to MoviesDrive
     if (sourceUrl && (sourceUrl.includes('moviesdrive') || (!sourceUrl.includes('vegamovies') && !sourceUrl.includes('bollyflix') && query.preferredPluginId === 'com.community.moviesdrive'))) {

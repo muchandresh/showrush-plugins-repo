@@ -81,7 +81,8 @@ return {
   version: '1.0.0',
   author: 'Showrush Community (ported from CSX by SaurabhKaperwan)',
   description: 'Dual Audio Bollywood, Hollywood Hindi Dubbed, Netflix, Hotstar & Prime Video releases with dynamic domain failover.',
-  types: ['movie', 'tv', 'anime'],
+  types: ['movie', 'tv'],
+  languages: ['hi'],
 
   // 🌟 Source Offered Catalog: Live OTT & Cinema Feeds
   async getCatalogFeeds(page = 1) {
@@ -245,11 +246,6 @@ return {
 
   async getStreams(query) {
     const { tmdbId, imdbId, title, type = 'movie', season = 1, episode = 1, sourceUrl } = query;
-
-    // Only resolve for Indian/Bollywood content or when explicitly requested
-    if (!query.isIndian && query.preferredPluginId !== 'com.community.vegamovies' && !sourceUrl?.includes('vegamovies')) {
-      return [];
-    }
 
     // 1. Direct sourceUrl resolution ONLY if it belongs to VegaMovies
     if (sourceUrl && (sourceUrl.includes('vegamovies') || (!sourceUrl.includes('moviesdrive') && !sourceUrl.includes('bollyflix') && query.preferredPluginId === 'com.community.vegamovies'))) {

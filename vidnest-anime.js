@@ -9,16 +9,12 @@ return {
   version: "1.2.0",
   author: "Community",
   description: "Vidnest Anime streaming with AniList mapping and Satoru, Pahe, Anya, and Miko servers.",
-  types: ["tv", "movie", "anime"],
+  types: ["anime"],
+  languages: ["ja", "en"],
 
   async getStreams(query) {
     const { tmdbId, title, type, season = 1, episode = 1 } = query;
     if (!title && !tmdbId) return [];
-
-    // Only resolve for Anime content or when explicitly requested
-    if (!query.isAnime && query.type !== 'anime' && !query.anilistId && query.preferredPluginId !== 'com.community.vidnest-anime') {
-      return [];
-    }
 
     try {
       const VIDNEST_BASE = "https://backend.vidnest.fun";

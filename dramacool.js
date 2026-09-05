@@ -10,14 +10,10 @@ return {
   author: "Showrush Community",
   description: "Native streaming provider for Korean, Japanese & Chinese Dramas with live episode catalog feeds.",
   types: ["tv", "movie"],
+  languages: ["ko", "zh", "ja"],
 
   async getStreams(query) {
     const { tmdbId, imdbId, title, type = 'tv', season = 1, episode = 1, sourceUrl } = query;
-
-    // Only resolve for Asian Drama content or when explicitly requested
-    if (!query.isAsianDrama && query.preferredPluginId !== 'com.community.dramacool' && !sourceUrl?.includes('asianc')) {
-      return [];
-    }
 
     // 1. Try DramaCool Asian Cinema Scraper
     if (title) {

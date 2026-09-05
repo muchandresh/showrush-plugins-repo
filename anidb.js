@@ -9,16 +9,12 @@ return {
   version: "2.0.0",
   author: "Showrush Community",
   description: "Dedicated high-speed Anime streaming provider with Japanese Romaji lookup, SUB & DUB audio, and WebVTT captions.",
-  types: ["tv", "movie", "anime"],
+  types: ["anime"],
+  languages: ["ja", "en"],
 
   async getStreams(query) {
     const { tmdbId, imdbId, title, type = 'tv', season = 1, episode = 1 } = query;
     if (!title && !tmdbId && !imdbId) return [];
-
-    // Only resolve for Anime content or when explicitly requested
-    if (!query.isAnime && query.type !== 'anime' && !query.anilistId && query.preferredPluginId !== 'com.community.anidb') {
-      return [];
-    }
 
     try {
       let targetTmdbId = tmdbId;
