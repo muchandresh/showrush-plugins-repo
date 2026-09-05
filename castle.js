@@ -15,6 +15,11 @@ return {
     const { tmdbId, imdbId, title, type = 'movie', season = 1, episode = 1 } = query;
     if (!tmdbId && !imdbId && !title) return [];
 
+    // Only run if explicitly preferred to prevent duplicate VidSrc streams
+    if (query.preferredPluginId !== 'com.community.castle') {
+      return [];
+    }
+
     try {
       if (Showrush?.extractors?.vidsrc) {
         const sources = await Showrush.extractors.vidsrc({

@@ -12,7 +12,12 @@ return {
   types: ["tv", "movie"],
 
   async getStreams(query) {
-    const { tmdbId, imdbId, title, type = 'tv', season = 1, episode = 1 } = query;
+    const { tmdbId, imdbId, title, type = 'tv', season = 1, episode = 1, sourceUrl } = query;
+
+    // Only resolve for Asian Drama content or when explicitly requested
+    if (!query.isAsianDrama && query.preferredPluginId !== 'com.community.dramacool' && !sourceUrl?.includes('asianc')) {
+      return [];
+    }
 
     // 1. Try DramaCool Asian Cinema Scraper
     if (title) {
@@ -84,33 +89,6 @@ return {
         }
       } catch (err) {
         console.warn('[DramaCool Scraper] Notice:', err);
-      }
-    }
-
-    // 2. Resilient fallback to universal extractor
-    if (Showrush?.extractors?.vidsrc) {
-      try {
-        const sources = await Showrush.extractors.vidsrc({
-          tmdbId,
-          imdbId,
-          title,
-          type: type === 'movie' ? 'movie' : 'tv',
-          season,
-          episode,
-        });
-
-        if (Array.isArray(sources) && sources.length > 0) {
-          return sources.map((s, idx) => ({
-            ...s,
-            id: `drama-fb-${idx + 1}-${Date.now()}`,
-            pluginId: 'com.community.dramacool',
-            pluginName: 'DramaCool (Asian Cinema)',
-            name: `DramaCool Stream • ${s.server || `CDN ${idx + 1}`}`,
-            server: `DramaCool CDN ${idx + 1}`,
-          }));
-        }
-      } catch (err) {
-        console.warn('[DramaCool Fallback] Notice:', err);
       }
     }
 

@@ -80,33 +80,6 @@ return {
       }
     } catch {}
 
-    // Resilient fallback
-    if (Showrush?.extractors?.vidsrc) {
-      try {
-        const sources = await Showrush.extractors.vidsrc({
-          tmdbId,
-          imdbId,
-          title,
-          type,
-          season,
-          episode,
-        });
-
-        if (Array.isArray(sources) && sources.length > 0) {
-          return sources.map((s, idx) => ({
-            ...s,
-            id: `vixsrc-fb-${idx + 1}-${Date.now()}`,
-            pluginId: 'com.community.vixsrc',
-            pluginName: 'VixSrc Direct HLS',
-            name: `VixSrc Master • ${s.server || `CDN ${idx + 1}`}`,
-            server: `VixSrc CDN ${idx + 1}`,
-          }));
-        }
-      } catch (err) {
-        console.warn('[VixSrc Fallback] Notice:', err);
-      }
-    }
-
     return [];
   },
 };

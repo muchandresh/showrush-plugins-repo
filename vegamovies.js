@@ -246,6 +246,11 @@ return {
   async getStreams(query) {
     const { tmdbId, imdbId, title, type = 'movie', season = 1, episode = 1, sourceUrl } = query;
 
+    // Only resolve for Indian/Bollywood content or when explicitly requested
+    if (!query.isIndian && query.preferredPluginId !== 'com.community.vegamovies' && !sourceUrl?.includes('vegamovies')) {
+      return [];
+    }
+
     // 1. Direct sourceUrl resolution ONLY if it belongs to VegaMovies
     if (sourceUrl && (sourceUrl.includes('vegamovies') || (!sourceUrl.includes('moviesdrive') && !sourceUrl.includes('bollyflix') && query.preferredPluginId === 'com.community.vegamovies'))) {
       try {
@@ -265,38 +270,6 @@ return {
         }
       } catch (err) {
         console.warn('[VegaMovies getStreams] Search notice:', err);
-      }
-    }
-
-    // 3. Resilient Multi-Server Stream Fallback
-    if (Showrush?.extractors?.vidsrc) {
-      try {
-        const sources = await Showrush.extractors.vidsrc({
-          tmdbId,
-          imdbId,
-          title,
-          type,
-          season,
-          episode,
-        });
-        if (Array.isArray(sources) && sources.length > 0) {
-          const names = [
-            'VegaMovies Primary (1080p Ultra)',
-            'VegaMovies Cloud Mirror 1',
-            'VegaMovies Fast CDN 2',
-            'VegaMovies Redundant Stream',
-          ];
-          return sources.map((s, idx) => ({
-            ...s,
-            id: `vega-fb-${idx + 1}-${Date.now()}`,
-            pluginId: 'com.community.vegamovies',
-            pluginName: 'VegaMovies (Hindi & OTT)',
-            name: names[idx] || `VegaMovies CDN ${idx + 1}`,
-            server: `VegaMovies Server ${idx + 1}`,
-          }));
-        }
-      } catch (err) {
-        console.warn('[VegaMovies Fallback] Notice:', err);
       }
     }
 

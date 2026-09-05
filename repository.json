@@ -2,7 +2,7 @@
   "id": "com.showrush.community",
   "name": "Showrush Official Community Repository",
   "author": "Showrush Community",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "description": "High-performance direct HLS, Anime, Indian Cinema, and Multi-Language streaming extensions powered by Showrush Extractor SDK.",
   "plugins": [
     {
@@ -38,7 +38,7 @@
     {
       "id": "com.community.vegamovies",
       "name": "VegaMovies (Hindi & OTT)",
-      "version": "2.0.0",
+      "version": "2.1.0",
       "author": "Showrush Community (CSX)",
       "description": "Dual Audio Bollywood, Hollywood Hindi Dubbed, Netflix, Hotstar & Prime Video releases with HubCloud & Pixeldrain streaming.",
       "types": ["movie", "tv", "anime"],
@@ -48,7 +48,7 @@
     {
       "id": "com.community.moviesdrive",
       "name": "MoviesDrive (Bollywood & OTT)",
-      "version": "2.0.0",
+      "version": "2.1.0",
       "author": "Showrush Community (CSX)",
       "description": "Dual Audio Bollywood, Hollywood, Netflix, Prime Video, Hotstar & K-Drama releases with direct HubCloud & Pixeldrain streaming.",
       "types": ["movie", "tv", "anime"],
@@ -58,7 +58,7 @@
     {
       "id": "com.community.bollyflix",
       "name": "Bollyflix (Bollywood & OTT)",
-      "version": "2.0.0",
+      "version": "2.1.0",
       "author": "Showrush Community (CSX)",
       "description": "Bollywood, Hollywood Hindi Dubbed, and South Indian Hindi releases with direct HubCloud & Pixeldrain streaming.",
       "types": ["movie", "tv", "anime"],
@@ -68,7 +68,7 @@
     {
       "id": "com.community.anidb",
       "name": "Ani-DB Anime (Sub/Dub)",
-      "version": "2.1.0",
+      "version": "2.2.0",
       "author": "Showrush Community",
       "description": "Dedicated high-speed Anime streaming provider with AniList simulcast catalogs, SUB & DUB audio, and WebVTT captions.",
       "types": ["movie", "tv", "anime"],
@@ -78,7 +78,7 @@
     {
       "id": "com.community.dramacool",
       "name": "DramaCool (Asian Cinema)",
-      "version": "1.1.0",
+      "version": "1.2.0",
       "author": "Showrush Community",
       "description": "Native streaming provider for Korean, Japanese & Chinese Dramas with live episode catalog feeds.",
       "types": ["tv", "movie"],
@@ -98,7 +98,7 @@
     {
       "id": "com.community.castle",
       "name": "Castle Multi-Language HD",
-      "version": "2.1.0",
+      "version": "2.2.0",
       "author": "Showrush Community",
       "description": "High-speed multi-language direct streaming provider with Multi-Audio & Subtitles support.",
       "types": ["movie", "tv"],
@@ -108,7 +108,7 @@
     {
       "id": "com.community.vixsrc",
       "name": "VixSrc Direct HLS",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "author": "Community",
       "description": "High-speed direct master.m3u8 HLS streams with multi-resolution playback.",
       "types": ["movie", "tv"],
@@ -118,7 +118,7 @@
     {
       "id": "com.community.vidnest-anime",
       "name": "Vidnest Anime Multi-Server",
-      "version": "1.2.0",
+      "version": "1.3.0",
       "author": "Community",
       "description": "Vidnest Anime streaming with AniList mapping and Satoru, Pahe, Anya, and Miko servers.",
       "types": ["tv", "movie", "anime"],

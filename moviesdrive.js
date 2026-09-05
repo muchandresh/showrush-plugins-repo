@@ -206,6 +206,11 @@ return {
   async getStreams(query) {
     const { tmdbId, imdbId, title, type = 'movie', season = 1, episode = 1, sourceUrl } = query;
 
+    // Only resolve for Indian/Bollywood content or when explicitly requested
+    if (!query.isIndian && query.preferredPluginId !== 'com.community.moviesdrive' && !sourceUrl?.includes('moviesdrive')) {
+      return [];
+    }
+
     // 1. Direct sourceUrl resolution ONLY if it belongs to MoviesDrive
     if (sourceUrl && (sourceUrl.includes('moviesdrive') || (!sourceUrl.includes('vegamovies') && !sourceUrl.includes('bollyflix') && query.preferredPluginId === 'com.community.moviesdrive'))) {
       try {
@@ -225,38 +230,6 @@ return {
         }
       } catch (err) {
         console.warn('[MoviesDrive getStreams] Search notice:', err);
-      }
-    }
-
-    // 3. Resilient Multi-Server Stream Fallback
-    if (Showrush?.extractors?.vidsrc) {
-      try {
-        const sources = await Showrush.extractors.vidsrc({
-          tmdbId,
-          imdbId,
-          title,
-          type,
-          season,
-          episode,
-        });
-        if (Array.isArray(sources) && sources.length > 0) {
-          const names = [
-            'MoviesDrive Fast R2 (1080p Ultra)',
-            'MoviesDrive Cloud Mirror 1',
-            'MoviesDrive High-Speed CDN 2',
-            'MoviesDrive Direct HLS',
-          ];
-          return sources.map((s, idx) => ({
-            ...s,
-            id: `mdrive-fb-${idx + 1}-${Date.now()}`,
-            pluginId: 'com.community.moviesdrive',
-            pluginName: 'MoviesDrive (Bollywood & OTT)',
-            name: names[idx] || `MoviesDrive CDN ${idx + 1}`,
-            server: `MoviesDrive Server ${idx + 1}`,
-          }));
-        }
-      } catch (err) {
-        console.warn('[MoviesDrive Fallback] Notice:', err);
       }
     }
 

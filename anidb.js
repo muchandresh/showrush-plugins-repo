@@ -15,11 +15,35 @@ return {
     const { tmdbId, imdbId, title, type = 'tv', season = 1, episode = 1 } = query;
     if (!title && !tmdbId && !imdbId) return [];
 
+    // Only resolve for Anime content or when explicitly requested
+    if (!query.isAnime && query.type !== 'anime' && !query.anilistId && query.preferredPluginId !== 'com.community.anidb') {
+      return [];
+    }
+
     try {
       let targetTmdbId = tmdbId;
       let targetImdbId = imdbId;
 
-      // If neither is present, try title lookup
+      // 1. Primary Direct 1080p Anime Extractor (AniBD / AnimeApps top - SUB & DUB)
+      if (Showrush?.extractors?.anibd) {
+        try {
+          const aniStreams = await Showrush.extractors.anibd({
+            anilistId: query.anilistId,
+            title,
+            episode,
+          });
+          if (Array.isArray(aniStreams) && aniStreams.length > 0) {
+            return aniStreams.map((s, idx) => ({
+              ...s,
+              id: `anidb-native-${idx + 1}-${Date.now()}`,
+              pluginId: 'com.community.anidb',
+              pluginName: 'Ani-DB Anime (Sub/Dub)',
+            }));
+          }
+        } catch {}
+      }
+
+      // If neither ID is present, try title lookup for fallback
       if (!targetTmdbId && !targetImdbId && title) {
         try {
           const searchRes = await Showrush.http.get(
@@ -33,28 +57,7 @@ return {
         } catch {}
       }
 
-      const allStreams = [];
-
-      // 1. Primary Direct 1080p Anime Extractor (AniBD / AnimeApps top - SUB & DUB)
-      if (Showrush?.extractors?.anibd) {
-        try {
-          const aniStreams = await Showrush.extractors.anibd({
-            anilistId: query.anilistId,
-            title,
-            episode,
-          });
-          if (Array.isArray(aniStreams) && aniStreams.length > 0) {
-            allStreams.push(...aniStreams.map((s, idx) => ({
-              ...s,
-              id: `anidb-native-${idx + 1}-${Date.now()}`,
-              pluginId: 'com.community.anidb',
-              pluginName: 'Ani-DB Anime (Sub/Dub)',
-            })));
-          }
-        } catch {}
-      }
-
-      // 2. High-Speed Multi-Server HLS Extractor (VidSrc / CloudOrchestra)
+      // 2. High-Speed Multi-Server HLS Extractor (VidSrc fallback for anime)
       if (Showrush?.extractors?.vidsrc) {
         try {
           const sources = await Showrush.extractors.vidsrc({
@@ -73,19 +76,19 @@ return {
               'Ani-DB Stream (Multi-Quality)',
               'Ani-DB Fast Mirror',
             ];
-            allStreams.push(...sources.map((s, idx) => ({
+            return sources.map((s, idx) => ({
               ...s,
               id: `anidb-${idx + 1}-${Date.now()}`,
               pluginId: 'com.community.anidb',
               pluginName: 'Ani-DB Anime (Sub/Dub)',
               name: names[idx] || `Ani-DB CDN ${idx + 1}`,
               server: `Ani-DB Server ${idx + 1}`,
-            })));
+            }));
           }
         } catch {}
       }
 
-      return allStreams;
+      return [];
     } catch (err) {
       console.warn('[Ani-DB Provider] Error:', err);
       return [];
