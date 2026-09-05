@@ -33,35 +33,59 @@ return {
         } catch {}
       }
 
-      if (Showrush?.extractors?.vidsrc) {
-        const sources = await Showrush.extractors.vidsrc({
-          tmdbId: targetTmdbId,
-          imdbId: targetImdbId,
-          title,
-          type: type === 'movie' ? 'movie' : 'tv',
-          season,
-          episode,
-        });
+      const allStreams = [];
 
-        if (Array.isArray(sources) && sources.length > 0) {
-          const names = [
-            'Ani-DB Ultra (Dual-Audio 1080p/4K)',
-            'Ani-DB MegaCloud (Sub/Dub HLS)',
-            'Ani-DB Stream (Multi-Quality)',
-            'Ani-DB Fast Mirror',
-          ];
-          return sources.map((s, idx) => ({
-            ...s,
-            id: `anidb-${idx + 1}-${Date.now()}`,
-            pluginId: 'com.community.anidb',
-            pluginName: 'Ani-DB Anime (Sub/Dub)',
-            name: names[idx] || `Ani-DB CDN ${idx + 1}`,
-            server: `Ani-DB Server ${idx + 1}`,
-          }));
-        }
+      // 1. Primary Direct 1080p Anime Extractor (AniBD / AnimeApps top - SUB & DUB)
+      if (Showrush?.extractors?.anibd) {
+        try {
+          const aniStreams = await Showrush.extractors.anibd({
+            anilistId: query.anilistId,
+            title,
+            episode,
+          });
+          if (Array.isArray(aniStreams) && aniStreams.length > 0) {
+            allStreams.push(...aniStreams.map((s, idx) => ({
+              ...s,
+              id: `anidb-native-${idx + 1}-${Date.now()}`,
+              pluginId: 'com.community.anidb',
+              pluginName: 'Ani-DB Anime (Sub/Dub)',
+            })));
+          }
+        } catch {}
       }
 
-      return [];
+      // 2. High-Speed Multi-Server HLS Extractor (VidSrc / CloudOrchestra)
+      if (Showrush?.extractors?.vidsrc) {
+        try {
+          const sources = await Showrush.extractors.vidsrc({
+            tmdbId: targetTmdbId,
+            imdbId: targetImdbId,
+            title,
+            type: type === 'movie' ? 'movie' : 'tv',
+            season,
+            episode,
+          });
+
+          if (Array.isArray(sources) && sources.length > 0) {
+            const names = [
+              'Ani-DB Ultra (Dual-Audio 1080p/4K)',
+              'Ani-DB MegaCloud (Sub/Dub HLS)',
+              'Ani-DB Stream (Multi-Quality)',
+              'Ani-DB Fast Mirror',
+            ];
+            allStreams.push(...sources.map((s, idx) => ({
+              ...s,
+              id: `anidb-${idx + 1}-${Date.now()}`,
+              pluginId: 'com.community.anidb',
+              pluginName: 'Ani-DB Anime (Sub/Dub)',
+              name: names[idx] || `Ani-DB CDN ${idx + 1}`,
+              server: `Ani-DB Server ${idx + 1}`,
+            })));
+          }
+        } catch {}
+      }
+
+      return allStreams;
     } catch (err) {
       console.warn('[Ani-DB Provider] Error:', err);
       return [];

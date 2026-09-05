@@ -74,6 +74,25 @@ return {
         } catch {}
       }
 
+      // 1. Dedicated AniBD Anime Extractor
+      if (Showrush?.extractors?.anibd) {
+        try {
+          const aniStreams = await Showrush.extractors.anibd({
+            anilistId,
+            title,
+            episode,
+          });
+          if (Array.isArray(aniStreams) && aniStreams.length > 0) {
+            streams.push(...aniStreams.map((s, idx) => ({
+              ...s,
+              id: `vidnest-anibd-${idx + 1}-${Date.now()}`,
+              pluginId: 'com.community.vidnest-anime',
+              pluginName: 'Vidnest Anime Multi-Server',
+            })));
+          }
+        } catch {}
+      }
+
       if (streams.length > 0) return streams;
 
       // Resilient fallback to universal extractor
