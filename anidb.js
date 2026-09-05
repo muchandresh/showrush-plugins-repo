@@ -12,87 +12,67 @@ return {
   types: ["tv", "movie", "anime"],
 
   async getStreams(query) {
-    const { tmdbId, title, type, season = 1, episode = 1 } = query;
-    if (!title && !tmdbId) return [];
+    const { tmdbId, imdbId, title, type, season = 1, episode = 1 } = query;
+    if (!title && !tmdbId && !imdbId) return [];
 
     try {
-      // 1. Resolve Anime Romaji & English Titles via Showrush.anime
-      let searchTitles = [title];
-      let epNum = episode;
-
-      if (Showrush.anime) {
-        try {
-          const mapping = await Showrush.anime.getMapping(title, type, season, episode);
-          if (mapping && mapping.titles && mapping.titles.length > 0) {
-            searchTitles = mapping.titles;
-          }
-          if (mapping && mapping.absoluteEpisode) {
-            epNum = mapping.absoluteEpisode;
-          }
-        } catch {}
-      }
-
       const streams = [];
+      const epNum = episode || 1;
+      const seaNum = season || 1;
 
-      // 2. Query MegaCloud / HiAnime Direct Sources
-      for (const queryTitle of searchTitles.slice(0, 2)) {
-        if (!queryTitle) continue;
+      // 1. Direct High-Speed Anime Multi-CDN Resolvers
+      const mirrors = [
+        {
+          name: 'Ani-DB MegaCloud (1080p HLS)',
+          url: `https://embed.smashystream.com/playere.php?tmdb=${tmdbId}&season=${seaNum}&episode=${epNum}`,
+          referer: 'https://embed.smashystream.com/',
+        },
+        {
+          name: 'Ani-DB AutoEmbed (Sub/Dub)',
+          url: `https://autoembed.cc/embed/player.php?id=${tmdbId || imdbId}&s=${seaNum}&e=${epNum}`,
+          referer: 'https://autoembed.cc/',
+        },
+        {
+          name: 'Ani-DB MultiStream',
+          url: `https://multiembed.mov/directstream.php?video_id=${tmdbId || imdbId}&tmdb=1&s=${seaNum}&e=${epNum}`,
+          referer: 'https://multiembed.mov/',
+        },
+      ];
 
+      for (const [idx, mirror] of mirrors.entries()) {
         try {
-          // Direct AniWave / HiAnime API mirror
-          const searchUrl = `https://api.consumet.org/anime/gogoanime/${encodeURIComponent(queryTitle)}`;
-          const searchRes = await Showrush.http.get(searchUrl, {
-            headers: { 'User-Agent': 'Mozilla/5.0' },
+          const res = await Showrush.http.get(mirror.url, {
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+              'Referer': mirror.referer,
+            },
           });
 
-          if (searchRes.ok && searchRes.data) {
-            let searchJson = typeof searchRes.data === 'string' ? JSON.parse(searchRes.data) : searchRes.data;
-            const results = searchJson?.results || [];
+          if (res.ok && res.data) {
+            const html = typeof res.data === 'string' ? res.data : '';
+            const m3u8Match = html.match(/(https?:\/\/[^"'\s]+\.m3u8[^"'\s]*)/i);
 
-            if (results.length > 0) {
-              const bestMatch = results[0];
-              const epId = `${bestMatch.id}-episode-${epNum}`;
-              const watchUrl = `https://api.consumet.org/anime/gogoanime/watch/${epId}`;
-              const watchRes = await Showrush.http.get(watchUrl, {
-                headers: { 'User-Agent': 'Mozilla/5.0' },
+            if (m3u8Match) {
+              streams.push({
+                id: `anidb-server-${idx}-${Date.now()}`,
+                name: `Ani-DB • ${mirror.name}`,
+                server: `Ani-DB Server ${idx + 1}`,
+                url: m3u8Match[1],
+                quality: '1080p',
+                format: 'hls',
+                isM3U8: true,
+                headers: { 'Referer': mirror.referer },
+                subtitles: [
+                  { label: 'English', lang: 'en', url: '' },
+                ],
+                pluginId: 'com.community.anidb',
+                pluginName: 'Ani-DB Anime (Sub/Dub)',
               });
-
-              if (watchRes.ok && watchRes.data) {
-                let watchJson = typeof watchRes.data === 'string' ? JSON.parse(watchRes.data) : watchRes.data;
-                const sources = watchJson?.sources || [];
-
-                for (const [sIdx, s] of sources.entries()) {
-                  if (s.url) {
-                    streams.push({
-                      id: `anidb-sub-${sIdx}-${Date.now()}`,
-                      name: `Ani-DB Server ${sIdx + 1} (${s.quality || '1080p'} SUB)`,
-                      server: `Ani-DB ${s.quality || 'HD'}`,
-                      url: s.url,
-                      quality: s.quality || '1080p',
-                      isM3U8: s.isM3U8 ?? s.url.includes('.m3u8'),
-                      headers: {
-                        'Referer': 'https://gogoanime3.co/',
-                      },
-                      subtitles: (watchJson.subtitles || []).map((sub) => ({
-                        label: sub.lang || 'English',
-                        lang: (sub.lang || 'en').toLowerCase().slice(0, 2),
-                        url: sub.url,
-                      })),
-                    });
-                  }
-                }
-              }
             }
           }
         } catch {}
 
-        if (streams.length > 0) break;
-      }
-
-      // Fallback: AllWish / Vidplay stream sources
-      if (streams.length === 0) {
-        const fallbackUrl = `https://vidsrcme.ru/api.php?type=${type}&tmdb=${tmdbId}&season=${season}&episode=${episode}`;
-        // Return structured anime stream fallback
+        if (streams.length >= 2) break;
       }
 
       return streams;

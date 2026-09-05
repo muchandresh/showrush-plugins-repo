@@ -188,9 +188,41 @@ return {
   async search(query) {
     if (!query) return [];
     const domain = await getLiveVegaDomain();
+    const cleanTitle = query
+      .replace(/\b(480p|720p|1080p|2160p|4k|hdr|web-dl|dual audio|hindi|season \d+|s\d+|ep \d+|part \d+)\b/gi, '')
+      .replace(/\[.*?\]|\(.*?\)/g, '')
+      .trim();
 
     try {
-      const searchUrl = `${domain}/?s=${encodeURIComponent(query)}`;
+      // 1. Fast JSON Search API (CSX Standard)
+      const searchRes = await Showrush.http.get(
+        `${domain}/search.php?q=${encodeURIComponent(cleanTitle || query)}&page=1`,
+        { headers: { 'User-Agent': 'Mozilla/5.0' } }
+      );
+
+      if (searchRes.ok && searchRes.data) {
+        const data = typeof searchRes.data === 'string' ? JSON.parse(searchRes.data) : searchRes.data;
+        if (data.hits && data.hits.length > 0) {
+          return data.hits.map((hit) => {
+            const doc = hit.document;
+            const fullUrl = doc.permalink.startsWith('http') ? doc.permalink : `${domain}${doc.permalink}`;
+            const isTv = doc.category?.some((c) => c.toLowerCase().includes('series') || c.toLowerCase().includes('season'));
+            return {
+              id: fullUrl,
+              title: doc.post_title.replace(/^Download\s+/i, ''),
+              poster: doc.post_thumbnail,
+              type: isTv ? 'tv' : 'movie',
+              url: fullUrl,
+              sourceUrl: fullUrl,
+            };
+          });
+        }
+      }
+    } catch {}
+
+    // Fallback: WordPress HTML Search
+    try {
+      const searchUrl = `${domain}/?s=${encodeURIComponent(cleanTitle || query)}`;
       const res = await Showrush.http.get(searchUrl, {
         headers: { 'User-Agent': 'Mozilla/5.0' },
       });
@@ -204,6 +236,7 @@ return {
         poster: item.poster,
         type: item.type,
         url: item.sourceUrl,
+        sourceUrl: item.sourceUrl,
       }));
     } catch {
       return [];
@@ -211,7 +244,14 @@ return {
   },
 
   async getStreams(query) {
-    const { title, type, season = 1, episode = 1 } = query;
+    const { title, type, season = 1, episode = 1, sourceUrl } = query;
+
+    // 1. If direct sourceUrl was provided via catalog card, bypass search!
+    if (sourceUrl && (sourceUrl.includes('vegamovies') || sourceUrl.startsWith('http'))) {
+      const streams = await this.getSourceStreams(sourceUrl, String(episode));
+      if (streams.length > 0) return streams;
+    }
+
     if (!title) return [];
 
     try {
@@ -219,7 +259,7 @@ return {
       if (searchResults.length === 0) return [];
 
       const target = searchResults[0];
-      return await this.getSourceStreams(target.id);
+      return await this.getSourceStreams(target.sourceUrl || target.id, String(episode));
     } catch (err) {
       console.warn('[VegaMovies getStreams] Notice:', err);
       return [];
@@ -250,63 +290,65 @@ return {
     }
   },
 
-  async getSourceStreams(sourceId) {
+  async getSourceStreams(sourceId, episode = '1') {
     try {
-      const res = await Showrush.http.get(sourceId);
+      const res = await Showrush.http.get(sourceId, {
+        headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
+      });
       if (!res.ok || !res.data) return [];
 
-      const doc = Showrush.dom.parse(res.data);
+      const html = typeof res.data === 'string' ? res.data : '';
+      const doc = Showrush.dom.parse(html);
       const streams = [];
 
-      // Extract download buttons or HubCloud / V-Cloud redirect anchors
-      const buttons = Array.from(
+      // 1. Gather download anchors (nexdrive, vcloud, hubcloud, fastdl, etc.)
+      const anchors = Array.from(
         doc.querySelectorAll(
-          'a.dwd-button, a[href*="vcloud"], a[href*="hubcloud"], a[href*="gdflix"], a[href*="drive"]'
+          'a[href*="nexdrive"], a[href*="vcloud"], a[href*="hubcloud"], a[href*="fastdl"], a[href*="drive"], a.dwd-button'
         )
       );
 
-      for (const [idx, btn] of buttons.slice(0, 4).entries()) {
-        const link = btn.getAttribute('href');
-        if (!link) continue;
-
-        // If link is already direct media (.m3u8 / .mp4)
-        if (link.includes('.m3u8') || link.includes('.mp4')) {
-          const serverName = btn.textContent?.trim() || `Vega Server ${idx + 1}`;
-          streams.push({
-            id: `vega-${idx}-${Date.now()}`,
-            name: `VegaMovies ${serverName}`,
-            server: serverName,
-            url: link,
-            quality: link.includes('1080p') ? '1080p' : link.includes('720p') ? '720p' : 'Auto',
-            format: link.includes('.m3u8') ? 'hls' : 'mp4',
-            isM3U8: link.includes('.m3u8'),
-            headers: { 'Referer': sourceId },
-            pluginId: 'com.community.vegamovies',
-            pluginName: 'VegaMovies (Hindi & OTT)',
-          });
-          continue;
+      const targetLinks = [];
+      for (const a of anchors) {
+        const href = a.getAttribute('href');
+        if (href && !targetLinks.includes(href)) {
+          targetLinks.push(href);
         }
+      }
 
-        // Try extracting direct stream from intermediate HubCloud / VCloud page
+      // 2. Process up to 3 link candidates
+      for (const link of targetLinks.slice(0, 3)) {
         try {
-          const subRes = await Showrush.http.get(link, { headers: { 'Referer': sourceId } });
-          if (subRes.ok && subRes.data) {
-            const html = typeof subRes.data === 'string' ? subRes.data : '';
-            const m3u8Match = html.match(/(https?:\/\/[^"'\s]+\.(?:m3u8|mp4)[^"'\s]*)/i);
-            if (m3u8Match) {
-              const streamUrl = m3u8Match[1];
-              streams.push({
-                id: `vega-${idx}-${Date.now()}`,
-                name: `VegaMovies (Direct Stream)`,
-                server: `Vega Server ${idx + 1}`,
-                url: streamUrl,
-                quality: '1080p',
-                format: streamUrl.includes('.m3u8') ? 'hls' : 'mp4',
-                isM3U8: streamUrl.includes('.m3u8'),
-                headers: { 'Referer': link },
-                pluginId: 'com.community.vegamovies',
-                pluginName: 'VegaMovies (Hindi & OTT)',
-              });
+          let resolvedCloudUrl = link;
+
+          // If intermediate nexdrive landing page, fetch to find vcloud/hubcloud redirect
+          if (link.includes('nexdrive')) {
+            const nexRes = await Showrush.http.get(link, {
+              headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': sourceId },
+            });
+            if (nexRes.ok && nexRes.data) {
+              const nexHtml = typeof nexRes.data === 'string' ? nexRes.data : '';
+              const match = nexHtml.match(/href=["'](https?:\/\/[^"']*(?:vcloud|hubcloud|pixel)[^"']*)["']/i);
+              if (match) {
+                resolvedCloudUrl = match[1];
+              }
+            }
+          }
+
+          // Use ShowrushSDK HubCloud extractor
+          if (Showrush.extractors && typeof Showrush.extractors.hubcloud === 'function') {
+            const extracted = await Showrush.extractors.hubcloud(resolvedCloudUrl, sourceId);
+            if (extracted && extracted.length > 0) {
+              for (const [idx, s] of extracted.entries()) {
+                streams.push({
+                  ...s,
+                  id: `vega-${idx}-${Date.now()}`,
+                  name: `VegaMovies • ${s.server || 'Direct Server'}`,
+                  pluginId: 'com.community.vegamovies',
+                  pluginName: 'VegaMovies (Hindi & OTT)',
+                });
+              }
+              if (streams.length >= 2) break;
             }
           }
         } catch {}
