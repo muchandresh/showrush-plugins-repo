@@ -153,7 +153,19 @@ return {
 
   async getStreams(query) {
     const { tmdbId, imdbId, title, type, season = 1, episode = 1 } = query;
-    if (!tmdbId && !imdbId) return [];
+    let targetImdbId = imdbId;
+    let targetTmdbId = tmdbId;
+
+    if (!targetTmdbId && !targetImdbId && title) {
+      try {
+        const searchRes = await this.search(title);
+        if (searchRes.length > 0 && searchRes[0].id) {
+          targetImdbId = searchRes[0].id;
+        }
+      } catch {}
+    }
+
+    if (!targetTmdbId && !targetImdbId) return [];
 
     const isTv = type === 'tv';
     const streams = [];
@@ -163,22 +175,22 @@ return {
       {
         name: 'AutoEmbed Master HLS',
         url: isTv
-          ? `https://autoembed.cc/embed/player.php?id=${tmdbId || imdbId}&s=${season}&e=${episode}`
-          : `https://autoembed.cc/embed/player.php?id=${tmdbId || imdbId}`,
+          ? `https://autoembed.cc/embed/player.php?id=${targetTmdbId || targetImdbId}&s=${season}&e=${episode}`
+          : `https://autoembed.cc/embed/player.php?id=${targetTmdbId || targetImdbId}`,
         referer: 'https://autoembed.cc/',
       },
       {
         name: 'SmashyStream Fast CDN',
         url: isTv
-          ? `https://embed.smashystream.com/playere.php?tmdb=${tmdbId}&season=${season}&episode=${episode}`
-          : `https://embed.smashystream.com/playere.php?tmdb=${tmdbId}`,
+          ? `https://embed.smashystream.com/playere.php?tmdb=${targetTmdbId || targetImdbId}&season=${season}&episode=${episode}`
+          : `https://embed.smashystream.com/playere.php?tmdb=${targetTmdbId || targetImdbId}`,
         referer: 'https://embed.smashystream.com/',
       },
       {
         name: 'MultiEmbed Ultra',
         url: isTv
-          ? `https://multiembed.mov/directstream.php?video_id=${tmdbId || imdbId}&tmdb=1&s=${season}&e=${episode}`
-          : `https://multiembed.mov/directstream.php?video_id=${tmdbId || imdbId}&tmdb=1`,
+          ? `https://multiembed.mov/directstream.php?video_id=${targetTmdbId || targetImdbId}&tmdb=1&s=${season}&e=${episode}`
+          : `https://multiembed.mov/directstream.php?video_id=${targetTmdbId || targetImdbId}&tmdb=1`,
         referer: 'https://multiembed.mov/',
       },
     ];

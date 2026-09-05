@@ -189,7 +189,8 @@ return {
   async getStreams(query) {
     const { title, type, season = 1, episode = 1, sourceUrl } = query;
 
-    if (sourceUrl && (sourceUrl.includes('bollyflix') || sourceUrl.startsWith('http'))) {
+    // Direct sourceUrl resolution ONLY if it belongs to Bollyflix
+    if (sourceUrl && (sourceUrl.includes('bollyflix') || (!sourceUrl.includes('moviesdrive') && !sourceUrl.includes('vegamovies') && query.preferredPluginId === 'com.community.bollyflix'))) {
       const streams = await this.getSourceStreams(sourceUrl, String(episode));
       if (streams.length > 0) return streams;
     }
@@ -216,31 +217,50 @@ return {
       if (!res.ok || !res.data) return [];
 
       const html = typeof res.data === 'string' ? res.data : '';
-      const doc = Showrush.dom.parse(html);
       const streams = [];
 
-      // Extract HubCloud or intermediate redirect links
-      const linkMatches = Array.from(
-        html.matchAll(/href=["'](https?:\/\/[^"']*(?:hubcloud|vcloud)[^"']*)["']/gi)
+      // 1. Gather all download buttons / links
+      const btnMatches = Array.from(
+        html.matchAll(/href=["'](https?:\/\/[^"']*(?:hubcloud|vcloud|fastdl|sidexfee|download|file)[^"']*)["']/gi)
       ).map((m) => m[1].replace(/&amp;/g, '&'));
 
-      const uniqueLinks = Array.from(new Set(linkMatches));
+      const uniqueLinks = Array.from(new Set(btnMatches)).filter(
+        (l) => !l.includes('apk') && !l.includes('telegram') && !l.includes('comment')
+      );
 
-      for (const link of uniqueLinks.slice(0, 3)) {
+      for (const rawLink of uniqueLinks.slice(0, 4)) {
         try {
+          let resolved = rawLink;
+
+          // Check if sidexfee / bypass is needed
+          if (!resolved.includes('fastdl') && resolved.includes('?id=')) {
+            const sid = resolved.split('id=').pop()?.split('&')[0];
+            if (sid) {
+              const bRes = await Showrush.http.get(`https://web.sidexfee.com/?id=${sid}`);
+              if (bRes.ok && bRes.data) {
+                const bStr = typeof bRes.data === 'string' ? bRes.data : JSON.stringify(bRes.data);
+                const lm = bStr.match(/link":"([^"]+)"/);
+                if (lm) {
+                  resolved = atob(lm[1].replace(/\\\//g, '/'));
+                }
+              }
+            }
+          }
+
           if (Showrush.extractors && typeof Showrush.extractors.hubcloud === 'function') {
-            const extracted = await Showrush.extractors.hubcloud(link, sourceId);
+            const extracted = await Showrush.extractors.hubcloud(resolved, sourceId);
             if (extracted && extracted.length > 0) {
               for (const [idx, s] of extracted.entries()) {
                 streams.push({
                   ...s,
                   id: `bf-${idx}-${Date.now()}`,
-                  name: `Bollyflix • ${s.server || 'HubCloud Direct'}`,
+                  name: `Bollyflix • ${s.server || 'Direct'}`,
+                  server: `Bollyflix (${s.server || 'Direct'})`,
                   pluginId: 'com.community.bollyflix',
                   pluginName: 'Bollyflix (Bollywood & OTT)',
                 });
               }
-              if (streams.length >= 2) break;
+              if (streams.length >= 3) break;
             }
           }
         } catch {}

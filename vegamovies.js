@@ -246,8 +246,8 @@ return {
   async getStreams(query) {
     const { title, type, season = 1, episode = 1, sourceUrl } = query;
 
-    // 1. If direct sourceUrl was provided via catalog card, bypass search!
-    if (sourceUrl && (sourceUrl.includes('vegamovies') || sourceUrl.startsWith('http'))) {
+    // Direct sourceUrl resolution ONLY if it belongs to VegaMovies
+    if (sourceUrl && (sourceUrl.includes('vegamovies') || (!sourceUrl.includes('moviesdrive') && !sourceUrl.includes('bollyflix') && query.preferredPluginId === 'com.community.vegamovies'))) {
       const streams = await this.getSourceStreams(sourceUrl, String(episode));
       if (streams.length > 0) return streams;
     }
@@ -298,60 +298,85 @@ return {
       if (!res.ok || !res.data) return [];
 
       const html = typeof res.data === 'string' ? res.data : '';
-      const doc = Showrush.dom.parse(html);
       const streams = [];
+      const targetEp = parseInt(episode, 10) || 1;
+      const isTv = html.toLowerCase().includes('season') || html.toLowerCase().includes('series');
 
-      // 1. Gather download anchors (nexdrive, vcloud, hubcloud, fastdl, etc.)
-      const anchors = Array.from(
-        doc.querySelectorAll(
-          'a[href*="nexdrive"], a[href*="vcloud"], a[href*="hubcloud"], a[href*="fastdl"], a[href*="drive"], a.dwd-button'
-        )
+      // 1. Gather all intermediate download links
+      const nexMatches = Array.from(
+        html.matchAll(/href=["'](https?:\/\/[^"']*(?:nexdrive|fastdl|vcloud|hubcloud)[^"']*)["']/gi)
+      ).map((m) => m[1].replace(/&amp;/g, '&'));
+
+      const uniqueNex = Array.from(new Set(nexMatches)).filter(
+        (l) => !l.includes('vegamovies-apk') && !l.includes('apk') && !l.includes('telegram') && !l.includes('comment')
       );
 
-      const targetLinks = [];
-      for (const a of anchors) {
-        const href = a.getAttribute('href');
-        if (href && !targetLinks.includes(href)) {
-          targetLinks.push(href);
+      if (isTv) {
+        // TV Series: Find the season nexdrive link containing episode vcloud links
+        for (const nex of uniqueNex) {
+          if (!nex.includes('nexdrive')) continue;
+          try {
+            const nRes = await Showrush.http.get(nex, {
+              headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': sourceId },
+            });
+            if (nRes.ok && nRes.data) {
+              const nHtml = typeof nRes.data === 'string' ? nRes.data : '';
+              const vcloudMatches = Array.from(
+                nHtml.matchAll(/href=["'](https?:\/\/[^"']*(?:vcloud|hubcloud)[^"']*)["']/gi)
+              ).map((m) => m[1]);
+
+              if (vcloudMatches.length >= targetEp) {
+                const epLink = vcloudMatches[targetEp - 1];
+                const extracted = await Showrush.extractors.hubcloud(epLink, nex);
+                for (const [idx, s] of extracted.entries()) {
+                  streams.push({
+                    ...s,
+                    id: `vega-tv-${idx}-${Date.now()}`,
+                    name: `VegaMovies S1 E${targetEp} • ${s.server || 'Direct'}`,
+                    server: `VegaMovies (${s.server || 'Direct'})`,
+                    pluginId: 'com.community.vegamovies',
+                    pluginName: 'VegaMovies (Hindi & OTT)',
+                  });
+                }
+                if (streams.length >= 2) break;
+              }
+            }
+          } catch {}
         }
       }
 
-      // 2. Process up to 3 link candidates
-      for (const link of targetLinks.slice(0, 3)) {
-        try {
-          let resolvedCloudUrl = link;
-
-          // If intermediate nexdrive landing page, fetch to find vcloud/hubcloud redirect
-          if (link.includes('nexdrive')) {
-            const nexRes = await Showrush.http.get(link, {
-              headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': sourceId },
-            });
-            if (nexRes.ok && nexRes.data) {
-              const nexHtml = typeof nexRes.data === 'string' ? nexRes.data : '';
-              const match = nexHtml.match(/href=["'](https?:\/\/[^"']*(?:vcloud|hubcloud|pixel)[^"']*)["']/i);
-              if (match) {
-                resolvedCloudUrl = match[1];
+      // If movie or series episode not resolved above, resolve movie links
+      if (streams.length === 0) {
+        for (const nex of uniqueNex.slice(0, 4)) {
+          try {
+            let cloudUrl = nex;
+            if (nex.includes('nexdrive')) {
+              const nRes = await Showrush.http.get(nex, {
+                headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': sourceId },
+              });
+              if (nRes.ok && nRes.data) {
+                const nHtml = typeof nRes.data === 'string' ? nRes.data : '';
+                const match = nHtml.match(/href=["'](https?:\/\/[^"']*(?:vcloud|hubcloud)[^"']*)["']/i);
+                if (match) cloudUrl = match[1];
               }
             }
-          }
 
-          // Use ShowrushSDK HubCloud extractor
-          if (Showrush.extractors && typeof Showrush.extractors.hubcloud === 'function') {
-            const extracted = await Showrush.extractors.hubcloud(resolvedCloudUrl, sourceId);
-            if (extracted && extracted.length > 0) {
+            if (cloudUrl.includes('vcloud') || cloudUrl.includes('hubcloud')) {
+              const extracted = await Showrush.extractors.hubcloud(cloudUrl, nex);
               for (const [idx, s] of extracted.entries()) {
                 streams.push({
                   ...s,
-                  id: `vega-${idx}-${Date.now()}`,
-                  name: `VegaMovies • ${s.server || 'Direct Server'}`,
+                  id: `vega-m-${idx}-${Date.now()}`,
+                  name: `VegaMovies • ${s.server || 'Direct'}`,
+                  server: `VegaMovies (${s.server || 'Direct'})`,
                   pluginId: 'com.community.vegamovies',
                   pluginName: 'VegaMovies (Hindi & OTT)',
                 });
               }
-              if (streams.length >= 2) break;
+              if (streams.length >= 4) break;
             }
-          }
-        } catch {}
+          } catch {}
+        }
       }
 
       return streams;

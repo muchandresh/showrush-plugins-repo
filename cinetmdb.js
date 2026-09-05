@@ -146,7 +146,19 @@ return {
 
   async getStreams(query) {
     const { tmdbId, imdbId, title, type, season = 1, episode = 1 } = query;
-    if (!tmdbId && !imdbId) return [];
+    let targetImdbId = imdbId;
+    let targetTmdbId = tmdbId;
+
+    if (!targetTmdbId && !targetImdbId && title) {
+      try {
+        const searchRes = await this.search(title);
+        if (searchRes.length > 0 && searchRes[0].id) {
+          targetTmdbId = searchRes[0].id;
+        }
+      } catch {}
+    }
+
+    if (!targetTmdbId && !targetImdbId) return [];
 
     const isTv = type === 'tv';
     const streams = [];
@@ -155,15 +167,15 @@ return {
       {
         name: 'AutoEmbed 1080p Master',
         url: isTv
-          ? `https://autoembed.cc/embed/player.php?id=${tmdbId || imdbId}&s=${season}&e=${episode}`
-          : `https://autoembed.cc/embed/player.php?id=${tmdbId || imdbId}`,
+          ? `https://autoembed.cc/embed/player.php?id=${targetTmdbId || targetImdbId}&s=${season}&e=${episode}`
+          : `https://autoembed.cc/embed/player.php?id=${targetTmdbId || targetImdbId}`,
         referer: 'https://autoembed.cc/',
       },
       {
         name: 'SmashyStream Multi-CDN',
         url: isTv
-          ? `https://embed.smashystream.com/playere.php?tmdb=${tmdbId}&season=${season}&episode=${episode}`
-          : `https://embed.smashystream.com/playere.php?tmdb=${tmdbId}`,
+          ? `https://embed.smashystream.com/playere.php?tmdb=${targetTmdbId || targetImdbId}&season=${season}&episode=${episode}`
+          : `https://embed.smashystream.com/playere.php?tmdb=${targetTmdbId || targetImdbId}`,
         referer: 'https://embed.smashystream.com/',
       },
     ];

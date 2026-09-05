@@ -206,8 +206,8 @@ return {
   async getStreams(query) {
     const { title, type, season = 1, episode = 1, sourceUrl } = query;
 
-    // Direct sourceUrl resolution
-    if (sourceUrl && (sourceUrl.includes('moviesdrive') || sourceUrl.startsWith('http'))) {
+    // Direct sourceUrl resolution ONLY if it belongs to MoviesDrive
+    if (sourceUrl && (sourceUrl.includes('moviesdrive') || (!sourceUrl.includes('vegamovies') && !sourceUrl.includes('bollyflix') && query.preferredPluginId === 'com.community.moviesdrive'))) {
       const streams = await this.getSourceStreams(sourceUrl, String(episode));
       if (streams.length > 0) return streams;
     }
@@ -234,34 +234,108 @@ return {
       if (!res.ok || !res.data) return [];
 
       const html = typeof res.data === 'string' ? res.data : '';
-      const doc = Showrush.dom.parse(html);
       const streams = [];
 
-      // Extract HubCloud or intermediate redirect links
-      const linkMatches = Array.from(
-        html.matchAll(/href=["'](https?:\/\/[^"']*(?:hubcloud|vcloud)[^"']*)["']/gi)
-      ).map((m) => m[1].replace(/&amp;/g, '&'));
+      // 1. Extract all H5 and button download links (mdrive.lol/archive/...)
+      const h5Matches = Array.from(
+        html.matchAll(/<h5[^>]*>[\s\S]*?<a[^>]+href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)
+      );
 
-      const uniqueLinks = Array.from(new Set(linkMatches));
+      const targetEp = parseInt(episode, 10) || 1;
+      const isTv = html.toLowerCase().includes('season') || html.toLowerCase().includes('single episode');
 
-      for (const link of uniqueLinks.slice(0, 3)) {
-        try {
-          if (Showrush.extractors && typeof Showrush.extractors.hubcloud === 'function') {
-            const extracted = await Showrush.extractors.hubcloud(link, sourceId);
-            if (extracted && extracted.length > 0) {
+      if (isTv) {
+        // TV Series: Find Single Episode archives
+        const validArchives = h5Matches.filter(
+          (m) => (m[1].includes('archive') || m[1].includes('mdrive')) && m[2].includes('Single Episode')
+        );
+
+        if (validArchives.length > 0) {
+          // Take the top archive (e.g. 720p or 480p Single Episode)
+          const chosenArchive = validArchives[0][1];
+          const aRes = await Showrush.http.get(chosenArchive, {
+            headers: { 'Referer': sourceId, 'User-Agent': 'Mozilla/5.0' },
+          });
+          if (aRes.ok && aRes.data) {
+            const aHtml = typeof aRes.data === 'string' ? aRes.data : '';
+            const hubMatches = Array.from(
+              aHtml.matchAll(/href=["'](https?:\/\/[^"']*(?:hubcloud|vcloud)[^"']*)["']/gi)
+            ).map((m) => m[1]);
+
+            if (hubMatches.length >= targetEp) {
+              const epHubLink = hubMatches[targetEp - 1];
+              const extracted = await Showrush.extractors.hubcloud(epHubLink, chosenArchive);
               for (const [idx, s] of extracted.entries()) {
                 streams.push({
                   ...s,
-                  id: `md-${idx}-${Date.now()}`,
-                  name: `MoviesDrive • ${s.server || 'HubCloud Direct'}`,
+                  id: `md-tv-${idx}-${Date.now()}`,
+                  name: `MoviesDrive S1 E${targetEp} • ${s.server || 'Direct'}`,
+                  server: `MoviesDrive (${s.server || 'Direct'})`,
                   pluginId: 'com.community.moviesdrive',
                   pluginName: 'MoviesDrive (Bollywood & OTT)',
                 });
               }
-              if (streams.length >= 2) break;
             }
           }
-        } catch {}
+        }
+      }
+
+      // If movie or series episode didn't resolve, extract MoviesDrive quality archives
+      if (streams.length === 0) {
+        const qualityBatches = [];
+        for (const m of h5Matches) {
+          const link = m[1];
+          const text = m[2].replace(/<[^>]+>/g, '').trim();
+          if (!link.includes('archive') && !link.includes('mdrive')) continue;
+          let quality = '1080p';
+          if (text.includes('480p')) quality = '480p';
+          else if (text.includes('720p')) quality = '720p';
+          else if (text.includes('1080p')) quality = '1080p';
+          else if (text.includes('2160p') || text.includes('4K')) quality = '4K';
+          qualityBatches.push({ quality, label: text, link });
+        }
+
+        // Deduplicate qualities so we query 1080p, 720p, 480p once each
+        const seenQ = new Set();
+        const filtered = [];
+        for (const q of qualityBatches) {
+          if (!seenQ.has(q.quality)) {
+            seenQ.add(q.quality);
+            filtered.push(q);
+          }
+        }
+
+        // Fetch archives in parallel for all qualities
+        await Promise.allSettled(
+          filtered.slice(0, 3).map(async (q) => {
+            try {
+              const aRes = await Showrush.http.get(q.link, {
+                headers: { 'Referer': sourceId, 'User-Agent': 'Mozilla/5.0' },
+              });
+              if (!aRes.ok || !aRes.data) return;
+
+              const aHtml = typeof aRes.data === 'string' ? aRes.data : '';
+              const hubMatches = Array.from(
+                aHtml.matchAll(/href=["'](https?:\/\/[^"']*(?:hubcloud|vcloud)[^"']*)["']/gi)
+              ).map((m) => m[1]);
+
+              if (hubMatches.length > 0) {
+                const extracted = await Showrush.extractors.hubcloud(hubMatches[0], q.link);
+                for (const [idx, s] of extracted.entries()) {
+                  streams.push({
+                    ...s,
+                    id: `md-${q.quality}-${idx}-${Date.now()}`,
+                    name: `MoviesDrive ${q.quality} • ${s.server || 'Direct'}`,
+                    server: `MoviesDrive ${q.quality} (${s.server || 'Direct'})`,
+                    quality: q.quality,
+                    pluginId: 'com.community.moviesdrive',
+                    pluginName: 'MoviesDrive (Bollywood & OTT)',
+                  });
+                }
+              }
+            } catch {}
+          })
+        );
       }
 
       return streams;
