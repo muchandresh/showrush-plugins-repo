@@ -317,7 +317,136 @@ async function dynamicAnimeMapping(title, _type, season = 1, episode = 1) {
   };
 }
 
-// F. Universal Cyberlocker Dispatcher
+// G. Filemoon Decoder
+async function resolveFilemoon(embedUrl, serverLabel = 'Filemoon HD') {
+  if (!embedUrl) return [];
+  try {
+    const origin = new URL(embedUrl).origin;
+    const res = await Showrush.http.get(embedUrl, {
+      headers: {
+        Referer: `${origin}/`,
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      },
+    });
+    if (!res.ok || typeof res.data !== 'string') return [];
+    const html = res.data;
+    const unpacked = unpackJs(html);
+
+    const m3u8Match =
+      unpacked.match(/sources:\s*\[\s*\{\s*file:\s*["']([^"']+\.m3u8[^"']*)["']/i) ||
+      unpacked.match(/file:\s*["']([^"']+\.m3u8[^"']*)["']/i) ||
+      html.match(/file:\s*["']([^"']+\.m3u8[^"']*)["']/i);
+
+    if (m3u8Match) {
+      const streamUrl = m3u8Match[1];
+      return [
+        {
+          id: `filemoon-${Date.now()}`,
+          pluginId: 'com.community.resolvers',
+          pluginName: 'Community Resolvers',
+          name: `${serverLabel} (1080p HLS)`,
+          server: serverLabel,
+          url: streamUrl,
+          quality: '1080p',
+          format: 'hls',
+          isM3U8: true,
+          headers: { Referer: `${origin}/`, Origin: origin },
+        },
+      ];
+    }
+  } catch (err) {
+    console.warn('[Resolver: Filemoon] Notice:', err);
+  }
+  return [];
+}
+
+// H. Mixdrop Decoder
+async function resolveMixdrop(embedUrl, serverLabel = 'Mixdrop HD') {
+  if (!embedUrl) return [];
+  try {
+    const origin = new URL(embedUrl).origin;
+    const res = await Showrush.http.get(embedUrl, {
+      headers: {
+        Referer: `${origin}/`,
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      },
+    });
+    if (!res.ok || typeof res.data !== 'string') return [];
+    const html = res.data;
+    const unpacked = unpackJs(html);
+
+    const wurlMatch =
+      unpacked.match(/MDCore\.wurl\s*=\s*["']([^"']+)["']/i) ||
+      unpacked.match(/wurl\s*=\s*["']([^"']+)["']/i) ||
+      html.match(/MDCore\.wurl\s*=\s*["']([^"']+)["']/i);
+
+    if (wurlMatch) {
+      let directUrl = wurlMatch[1];
+      if (directUrl.startsWith('//')) directUrl = `https:${directUrl}`;
+      return [
+        {
+          id: `mixdrop-${Date.now()}`,
+          pluginId: 'com.community.resolvers',
+          pluginName: 'Community Resolvers',
+          name: `${serverLabel} (MP4 Direct)`,
+          server: serverLabel,
+          url: directUrl,
+          quality: '1080p',
+          format: 'mp4',
+          isM3U8: false,
+          headers: { Referer: `${origin}/` },
+        },
+      ];
+    }
+  } catch (err) {
+    console.warn('[Resolver: Mixdrop] Notice:', err);
+  }
+  return [];
+}
+
+// I. Vidplay & RabbitStream Decoder
+async function resolveVidplay(embedUrl, serverLabel = 'Vidplay HD') {
+  if (!embedUrl) return [];
+  try {
+    const origin = new URL(embedUrl).origin;
+    const res = await Showrush.http.get(embedUrl, {
+      headers: {
+        Referer: `${origin}/`,
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      },
+    });
+    if (!res.ok || typeof res.data !== 'string') return [];
+    const html = res.data;
+    const unpacked = unpackJs(html);
+
+    const m3u8Match =
+      unpacked.match(/file:\s*["']([^"']+\.m3u8[^"']*)["']/i) ||
+      unpacked.match(/sources:\s*\[\s*\{\s*file:\s*["']([^"']+\.m3u8[^"']*)["']/i) ||
+      html.match(/file:\s*["']([^"']+\.m3u8[^"']*)["']/i);
+
+    if (m3u8Match) {
+      return [
+        {
+          id: `vidplay-${Date.now()}`,
+          pluginId: 'com.community.resolvers',
+          pluginName: 'Community Resolvers',
+          name: `${serverLabel} (1080p HLS)`,
+          server: serverLabel,
+          url: m3u8Match[1],
+          quality: '1080p',
+          format: 'hls',
+          isM3U8: true,
+          headers: { Referer: `${origin}/`, Origin: origin },
+        },
+      ];
+    }
+  } catch (err) {
+    console.warn('[Resolver: Vidplay] Notice:', err);
+  }
+  return [];
+}
+
+// J. Universal Cyberlocker Dispatcher
 async function resolveUniversal(url, referer) {
   if (!url) return [];
   const lower = url.toLowerCase();
@@ -333,6 +462,15 @@ async function resolveUniversal(url, referer) {
   }
   if (/dood|doodstream|ds2play/i.test(lower)) {
     return await resolveDoodstream(url);
+  }
+  if (/filemoon/i.test(lower)) {
+    return await resolveFilemoon(url);
+  }
+  if (/mixdrop/i.test(lower)) {
+    return await resolveMixdrop(url);
+  }
+  if (/vidplay|rabbitstream/i.test(lower)) {
+    return await resolveVidplay(url);
   }
   if (/pixeldrain\.com\/(?:u|d)\/([a-zA-Z0-9_-]+)/i.test(lower)) {
     const id = lower.match(/pixeldrain\.com\/(?:u|d)\/([a-zA-Z0-9_-]+)/i)[1];
@@ -364,18 +502,43 @@ if (typeof Showrush !== 'undefined') {
   Showrush.resolvers.streamwish = resolveStreamwish;
   Showrush.resolvers.streamtape = resolveStreamtape;
   Showrush.resolvers.doodstream = resolveDoodstream;
+  Showrush.resolvers.filemoon = resolveFilemoon;
+  Showrush.resolvers.mixdrop = resolveMixdrop;
+  Showrush.resolvers.vidplay = resolveVidplay;
   Showrush.resolvers.animeMapping = dynamicAnimeMapping;
   Showrush.resolvers.getMapping = dynamicAnimeMapping;
   Showrush.resolvers.resolve = resolveUniversal;
+
+  Showrush.extractors = Showrush.extractors || {};
+  Showrush.extractors.hubcloud = resolveHubcloud;
+  Showrush.extractors.streamwish = resolveStreamwish;
+  Showrush.extractors.streamtape = resolveStreamtape;
+  Showrush.extractors.doodstream = resolveDoodstream;
+  Showrush.extractors.filemoon = resolveFilemoon;
+  Showrush.extractors.mixdrop = resolveMixdrop;
+  Showrush.extractors.vidplay = resolveVidplay;
 
   if (typeof Showrush.registerResolver === 'function') {
     Showrush.registerResolver('hubcloud', resolveHubcloud);
     Showrush.registerResolver('streamwish', resolveStreamwish);
     Showrush.registerResolver('streamtape', resolveStreamtape);
     Showrush.registerResolver('doodstream', resolveDoodstream);
+    Showrush.registerResolver('filemoon', resolveFilemoon);
+    Showrush.registerResolver('mixdrop', resolveMixdrop);
+    Showrush.registerResolver('vidplay', resolveVidplay);
     Showrush.registerResolver('resolve', resolveUniversal);
     Showrush.registerResolver('getMapping', dynamicAnimeMapping);
     Showrush.registerResolver('animeMapping', dynamicAnimeMapping);
+  }
+
+  if (typeof Showrush.registerExtractor === 'function') {
+    Showrush.registerExtractor('hubcloud', resolveHubcloud);
+    Showrush.registerExtractor('streamwish', resolveStreamwish);
+    Showrush.registerExtractor('streamtape', resolveStreamtape);
+    Showrush.registerExtractor('doodstream', resolveDoodstream);
+    Showrush.registerExtractor('filemoon', resolveFilemoon);
+    Showrush.registerExtractor('mixdrop', resolveMixdrop);
+    Showrush.registerExtractor('vidplay', resolveVidplay);
   }
 
   // Hook dynamic mapping into Showrush.anime

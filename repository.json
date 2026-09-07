@@ -14,7 +14,29 @@
       "types": ["movie", "tv"],
       "languages": ["en", "all"],
       "category": "pro_plugin",
-      "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/cinestream.js"
+      "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/cinestream.js",
+      "customBaseUrl": "https://v3-cinemeta.strem.io",
+      "settingsSchema": [
+        {
+          "key": "catalogCategory",
+          "label": "Default Home Catalog",
+          "type": "select",
+          "description": "Catalog to feature when browsing this provider",
+          "default": "trending",
+          "options": [
+            { "label": "Trending & Popular", "value": "trending" },
+            { "label": "Top Rated Cinema", "value": "top" },
+            { "label": "New Releases", "value": "new" }
+          ]
+        },
+        {
+          "key": "debridApiKey",
+          "label": "Real-Debrid API Key",
+          "type": "password",
+          "description": "Optional Real-Debrid token for ultra-fast cached torrent streaming",
+          "placeholder": "Enter Real-Debrid token..."
+        }
+      ]
     },
     {
       "id": "com.community.cinesimkl",
@@ -25,7 +47,8 @@
       "types": ["movie", "tv", "anime"],
       "languages": ["all"],
       "category": "pro_plugin",
-      "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/cinesimkl.js"
+      "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/cinesimkl.js",
+      "customBaseUrl": "https://api.simkl.com"
     },
     {
       "id": "com.community.cinetmdb",
@@ -47,7 +70,31 @@
       "types": ["movie", "tv"],
       "languages": ["hi"],
       "category": "pro_plugin",
-      "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/vegamovies.js"
+      "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/vegamovies.js",
+      "customBaseUrl": "https://new2.vegamovies.futbol",
+      "settingsSchema": [
+        {
+          "key": "prefer1080p",
+          "label": "Prefer 1080p Full HD",
+          "type": "boolean",
+          "description": "Prioritize 1080p and 4K streams over 720p/480p",
+          "default": true
+        },
+        {
+          "key": "enableHubCloudFsl",
+          "label": "Enable Cloudflare R2 Mirrors",
+          "type": "boolean",
+          "description": "Direct Cloudflare R2 high-speed download mirrors",
+          "default": true
+        },
+        {
+          "key": "enablePixeldrain",
+          "label": "Enable Pixeldrain Mirrors",
+          "type": "boolean",
+          "description": "Include Pixeldrain direct stream links",
+          "default": true
+        }
+      ]
     },
     {
       "id": "com.community.moviesdrive",
@@ -58,7 +105,31 @@
       "types": ["movie", "tv"],
       "languages": ["hi"],
       "category": "pro_plugin",
-      "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/moviesdrive.js"
+      "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/moviesdrive.js",
+      "customBaseUrl": "https://new3.moviesdrive.christmas",
+      "settingsSchema": [
+        {
+          "key": "prefer1080p",
+          "label": "Prefer 1080p Full HD",
+          "type": "boolean",
+          "description": "Prioritize 1080p and 4K streams over 720p/480p",
+          "default": true
+        },
+        {
+          "key": "enableHubCloudFsl",
+          "label": "Enable Cloudflare R2 Mirrors",
+          "type": "boolean",
+          "description": "Direct Cloudflare R2 high-speed download mirrors",
+          "default": true
+        },
+        {
+          "key": "enablePixeldrain",
+          "label": "Enable Pixeldrain Mirrors",
+          "type": "boolean",
+          "description": "Include Pixeldrain direct stream links",
+          "default": true
+        }
+      ]
     },
     {
       "id": "com.community.bollyflix",
@@ -69,7 +140,24 @@
       "types": ["movie", "tv"],
       "languages": ["hi"],
       "category": "pro_plugin",
-      "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/bollyflix.js"
+      "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/bollyflix.js",
+      "customBaseUrl": "https://bollyflix.af",
+      "settingsSchema": [
+        {
+          "key": "prefer1080p",
+          "label": "Prefer 1080p Full HD",
+          "type": "boolean",
+          "description": "Prioritize 1080p and 4K streams over 720p/480p",
+          "default": true
+        },
+        {
+          "key": "enablePixeldrain",
+          "label": "Enable Pixeldrain Mirrors",
+          "type": "boolean",
+          "description": "Include Pixeldrain direct stream links",
+          "default": true
+        }
+      ]
     },
     {
       "id": "com.community.anidb",
@@ -80,7 +168,23 @@
       "types": ["anime"],
       "languages": ["ja", "en"],
       "category": "pro_plugin",
-      "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/anidb.js"
+      "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/anidb.js",
+      "settingsSchema": [
+        {
+          "key": "preferDub",
+          "label": "Prefer English Dubbed Audio",
+          "type": "boolean",
+          "description": "Prioritize English DUB streams over Japanese SUB when both are available",
+          "default": false
+        },
+        {
+          "key": "anilistToken",
+          "label": "Custom AniList Token",
+          "type": "password",
+          "description": "Optional token for user watchlist synchronization",
+          "placeholder": "Enter AniList token..."
+        }
+      ]
     },
     {
       "id": "com.community.dramacool",
@@ -91,7 +195,8 @@
       "types": ["tv", "movie"],
       "languages": ["ko", "zh", "ja"],
       "category": "pro_plugin",
-      "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/dramacool.js"
+      "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/dramacool.js",
+      "customBaseUrl": "https://dramacool.bg"
     },
     {
       "id": "com.community.superstream",
@@ -139,10 +244,10 @@
     },
     {
       "id": "com.community.resolvers",
-      "name": "Showrush Community Resolvers",
-      "version": "1.0.0",
+      "name": "Showrush Community Resolvers (Master Bridge)",
+      "version": "1.1.0",
       "author": "Showrush Community",
-      "description": "Universal cyberlocker and extractor pack (HubCloud, StreamWish, FileLions, DoodStream, Streamtape, Pixeldrain) with dynamic AniList title mapping.",
+      "description": "Universal cyberlocker & extractor pack (HubCloud, StreamWish, FileLions, DoodStream, Streamtape, Filemoon, Mixdrop, Vidplay, Pixeldrain) with dynamic AniList title mapping.",
       "types": ["movie", "tv", "anime"],
       "languages": ["all"],
       "category": "plugin",
@@ -157,7 +262,17 @@
       "types": ["movie", "tv"],
       "languages": ["en", "all"],
       "category": "plugin",
-      "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/vidsrc-direct.js"
+      "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/vidsrc-direct.js",
+      "customBaseUrl": "https://data.vidsrcme.ru",
+      "settingsSchema": [
+        {
+          "key": "maxMirrors",
+          "label": "Max Stream Mirrors",
+          "type": "number",
+          "description": "Maximum number of redundant CDN mirrors to extract",
+          "default": 3
+        }
+      ]
     }
   ]
 }
