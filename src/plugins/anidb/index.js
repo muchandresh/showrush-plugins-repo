@@ -29,7 +29,11 @@ return {
 
       const epNum = Number(episode) || 1;
       const serversRes = await http.get(`${BASE}/api2.php?epid=${targetId}`, {
-        headers: { Accept: 'application/json' },
+        headers: {
+          Accept: 'application/json',
+          Referer: 'https://animeapps.top/',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        },
       });
       if (!serversRes.ok || !Array.isArray(serversRes.data)) return [];
 
@@ -55,7 +59,11 @@ return {
       for (const target of epTargets) {
         try {
           const linksRes = await http.get(`${BASE}/apilink.php?data=${encodeURIComponent(target.link)}`, {
-            headers: { Accept: 'application/json' },
+            headers: {
+              Accept: 'application/json',
+              Referer: 'https://animeapps.top/',
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            },
           });
           if (!linksRes.ok || !Array.isArray(linksRes.data)) continue;
 
@@ -63,21 +71,24 @@ return {
             if (!srv.link) continue;
             const origin = new URL(srv.link).origin;
             const htmlRes = await http.get(srv.link, {
-              headers: { Referer: `${origin}/`, 'User-Agent': 'Mozilla/5.0' },
+              headers: {
+                Referer: `${origin}/`,
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+              },
             });
             if (!htmlRes.ok || typeof htmlRes.data !== 'string') continue;
 
             const m = htmlRes.data.match(/videoUrl\s*:\s*["\x27]([^"\x27]+)["\x27]/);
             if (m) {
-              const raw = m[1];
+              const raw = m[1].replace(/\\\//g, '/');
               const streamUrl = raw.startsWith('http') ? raw : `${origin}${raw.startsWith('/') ? '' : '/'}${raw}`;
               if (!streams.some((s) => s.url === streamUrl)) {
                 streams.push({
                   id: `anidb-${target.audio.toLowerCase()}-${idx}-${Date.now()}`,
                   pluginId: 'com.community.anidb',
                   pluginName: 'Ani-DB Anime (Sub/Dub)',
-                  name: `Ani-DB ${srv.server || 'Primary'} (${target.audio} 1080p)`,
-                  server: `Ani-DB ${srv.server || 'Server'} [${target.audio}]`,
+                  name: `Ani-DB ${srv.server || 'Primary'} [${target.audio.toUpperCase()}] (1080p)`,
+                  server: `Ani-DB ${srv.server || 'Server'} [${target.audio.toUpperCase()}]`,
                   url: streamUrl,
                   quality: '1080p',
                   format: 'hls',

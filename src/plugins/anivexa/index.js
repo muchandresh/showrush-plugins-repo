@@ -409,7 +409,11 @@ return {
     // Mirror 1: AnimeApps High-Speed Sub/Dub Mirror
     try {
       const serversRes = await Showrush.http.get(`${ANIMEAPPS_BASE}/api2.php?epid=${rawId}`, {
-        headers: { Accept: 'application/json' },
+        headers: {
+          Accept: 'application/json',
+          Referer: 'https://animeapps.top/',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        },
       });
 
       if (serversRes.ok && Array.isArray(serversRes.data)) {
@@ -434,7 +438,13 @@ return {
           try {
             const linksRes = await Showrush.http.get(
               `${ANIMEAPPS_BASE}/apilink.php?data=${encodeURIComponent(target.link)}`,
-              { headers: { Accept: 'application/json' } }
+              {
+                headers: {
+                  Accept: 'application/json',
+                  Referer: 'https://animeapps.top/',
+                  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                },
+              }
             );
 
             if (linksRes.ok && Array.isArray(linksRes.data)) {
@@ -443,13 +453,16 @@ return {
                 const origin = new URL(srv.link).origin;
 
                 const htmlRes = await Showrush.http.get(srv.link, {
-                  headers: { Referer: `${origin}/`, 'User-Agent': 'Mozilla/5.0' },
+                  headers: {
+                    Referer: `${origin}/`,
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                  },
                 });
 
                 if (htmlRes.ok && typeof htmlRes.data === 'string') {
                   const m = htmlRes.data.match(/videoUrl\s*:\s*["\x27]([^"\x27]+)["\x27]/);
                   if (m) {
-                    const raw = m[1];
+                    const raw = m[1].replace(/\\\//g, '/');
                     const streamUrl = raw.startsWith('http')
                       ? raw
                       : `${origin}${raw.startsWith('/') ? '' : '/'}${raw}`;
@@ -459,8 +472,8 @@ return {
                         id: `anivexa-${target.audio.toLowerCase()}-${idx}-${Date.now()}`,
                         pluginId: 'com.community.anivexa',
                         pluginName: 'Anivexa Anime Engine Pro',
-                        name: `Anivexa ${srv.server || 'Primary'} (${target.audio} 1080p)`,
-                        server: `Anivexa CDN [${target.audio}]`,
+                        name: `Anivexa ${srv.server || 'Primary'} [${target.audio.toUpperCase()}] (1080p)`,
+                        server: `Anivexa CDN [${target.audio.toUpperCase()}]`,
                         url: streamUrl,
                         quality: '1080p',
                         format: 'hls',
