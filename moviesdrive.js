@@ -208,6 +208,26 @@ return {
       }
     } catch {}
 
+    // Fallback: WordPress HTML Search
+    try {
+      const searchUrl = `${domain}/?s=${encodeURIComponent(cleanQuery || query)}`;
+      const res = await Showrush.http.get(searchUrl, {
+        headers: { 'User-Agent': 'Mozilla/5.0' },
+      });
+
+      if (res.ok && res.data) {
+        const doc = Showrush.dom.parse(res.data);
+        return parseMoviesDriveGrid(doc).map((item) => ({
+          id: item.id,
+          title: item.title,
+          poster: item.poster,
+          type: item.type,
+          url: item.sourceUrl,
+          sourceUrl: item.sourceUrl,
+        }));
+      }
+    } catch {}
+
     return [];
   },
 
@@ -349,6 +369,18 @@ return {
             } catch {}
           })
         );
+      }
+
+      // Apply plugin settings: preferred server priority & preferred quality
+      const preferredServer = this.settings?.preferred_server || 'auto';
+      if (preferredServer !== 'auto' && streams.length > 1) {
+        streams.sort((a, b) => {
+          const aMatch = a.server?.toLowerCase().includes(preferredServer) || a.name?.toLowerCase().includes(preferredServer);
+          const bMatch = b.server?.toLowerCase().includes(preferredServer) || b.name?.toLowerCase().includes(preferredServer);
+          if (aMatch && !bMatch) return -1;
+          if (!aMatch && bMatch) return 1;
+          return 0;
+        });
       }
 
       return streams;

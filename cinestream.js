@@ -151,7 +151,135 @@ return {
     }
   },
 
-  async getStreams() {
-    return [];
+  async getStreams(query) {
+    const { tmdbId, imdbId, title, type = 'movie', season = 1, episode = 1 } = query;
+    let targetTmdbId = tmdbId;
+    let targetImdbId = imdbId;
+
+    // 1. Fallback title lookup if both IDs are missing
+    if (!targetImdbId && (title || targetTmdbId)) {
+      try {
+        const isTv = type === 'tv' || type === 'series';
+        const searchTitle = title || (targetTmdbId ? String(targetTmdbId) : '');
+        if (searchTitle) {
+          const searchRes = await Showrush.http.get(
+            `https://v3-cinemeta.strem.io/catalog/${isTv ? 'series' : 'movie'}/top/search=${encodeURIComponent(searchTitle)}.json`
+          );
+          if (searchRes.ok && searchRes.data) {
+            const data = typeof searchRes.data === 'string' ? JSON.parse(searchRes.data) : searchRes.data;
+            if (Array.isArray(data?.metas) && data.metas.length > 0) {
+              targetImdbId = data.metas[0].id || data.metas[0].imdb_id;
+            }
+          }
+        }
+      } catch {}
+    }
+
+    if (!targetTmdbId && !targetImdbId && !title) return [];
+
+    const streams = [];
+
+    // 2. Resolve direct multi-server HLS streams via Showrush Universal Extractor (VidSrc & Vidplay)
+    if (Showrush?.extractors?.vidsrc) {
+      try {
+        const sources = await Showrush.extractors.vidsrc({
+          tmdbId: targetTmdbId,
+          imdbId: targetImdbId,
+          title,
+          type,
+          season,
+          episode,
+        });
+
+        if (Array.isArray(sources) && sources.length > 0) {
+          for (const [idx, s] of sources.entries()) {
+            streams.push({
+              ...s,
+              id: `cs-vidsrc-${idx + 1}-${Date.now()}`,
+              pluginId: 'com.community.cinestream',
+              pluginName: 'CineStream (Cinemeta & Multi-CDN)',
+              name: `CineStream • ${s.server || `Server ${idx + 1}`}`,
+              server: `CineStream (${s.server || 'Direct CDN'})`,
+            });
+          }
+        }
+      } catch (err) {
+        console.warn('[CineStream Extractor] Notice:', err);
+      }
+    }
+
+    // 3. Stremio Addon Scraper (Torrentio & Custom Addons from CineStream Settings)
+    const stremioAddonsRaw = this.settings?.stremio_addons || 'https://torrentio.strem.fun';
+    const debridApiKey = (this.settings?.realdebrid_api_key || this.settings?.debridApiKey || '').trim();
+    const enableTorrentio = this.settings?.p_torrentio !== false;
+    const targetAddonId = targetImdbId || (targetTmdbId && String(targetTmdbId).startsWith('tt') ? targetTmdbId : null);
+
+    if (enableTorrentio && targetAddonId) {
+      const addonUrls = stremioAddonsRaw.split(/[\n,]+/).map((u) => u.trim()).filter(Boolean);
+      const isTv = type === 'tv' || type === 'series';
+      const streamPath = isTv
+        ? `series/${targetAddonId}:${season}:${episode}.json`
+        : `movie/${targetAddonId}.json`;
+
+      for (const addonBase of addonUrls.slice(0, 2)) {
+        try {
+          let cleanBase = addonBase.replace(/\/+$/, '').replace(/\/manifest\.json$/, '');
+          if (cleanBase.includes('torrentio.strem.fun') && debridApiKey && !cleanBase.includes('realdebrid=')) {
+            cleanBase = `${cleanBase}/realdebrid=${encodeURIComponent(debridApiKey)}`;
+          }
+          const stremioRes = await Showrush.http.get(`${cleanBase}/stream/${streamPath}`, {
+            headers: { 'User-Agent': 'Mozilla/5.0' },
+          });
+
+          if (stremioRes.ok && stremioRes.data) {
+            const data = typeof stremioRes.data === 'string' ? JSON.parse(stremioRes.data) : stremioRes.data;
+            const addonStreams = Array.isArray(data?.streams) ? data.streams : [];
+
+            for (const [idx, st] of addonStreams.slice(0, 5).entries()) {
+              if (st.url) {
+                streams.push({
+                  id: `cs-stremio-${idx}-${Date.now()}`,
+                  pluginId: 'com.community.cinestream',
+                  pluginName: 'CineStream (Cinemeta & Multi-CDN)',
+                  name: `CineStream • ${st.title?.split('\n')[0] || st.name || `Addon Stream ${idx + 1}`}`,
+                  server: st.name || 'Stremio Addon CDN',
+                  url: st.url,
+                  quality: st.name?.includes('4k') || st.name?.includes('2160p') ? '4K' : '1080p',
+                  format: st.url.includes('.m3u8') ? 'hls' : 'mp4',
+                  isM3U8: st.url.includes('.m3u8'),
+                });
+              } else if (st.infoHash) {
+                const magnetUrl = `magnet:?xt=urn:btih:${st.infoHash}&dn=${encodeURIComponent(st.title || title || 'Media')}`;
+                streams.push({
+                  id: `cs-torrent-${st.infoHash.slice(0, 8)}-${Date.now()}`,
+                  pluginId: 'com.community.cinestream',
+                  pluginName: 'CineStream (Cinemeta & Multi-CDN)',
+                  name: `CineStream Torrentio • ${st.title?.split('\n')[0] || st.name || 'P2P Stream'}`,
+                  server: debridApiKey ? 'Real-Debrid Torrent Cache' : 'Torrentio P2P',
+                  url: magnetUrl,
+                  quality: st.name?.includes('4k') ? '4K' : '1080p',
+                  format: 'mp4',
+                  isM3U8: false,
+                });
+              }
+            }
+          }
+        } catch {}
+      }
+    }
+
+    // 4. Apply CineStream quality preference settings
+    const preferredQuality = (this.settings?.preferred_quality || 'auto').toLowerCase();
+    if (preferredQuality !== 'auto' && streams.length > 1) {
+      streams.sort((a, b) => {
+        const aQual = (a.quality || '').toLowerCase() === preferredQuality;
+        const bQual = (b.quality || '').toLowerCase() === preferredQuality;
+        if (aQual && !bQual) return -1;
+        if (!aQual && bQual) return 1;
+        return 0;
+      });
+    }
+
+    return streams;
   },
 };

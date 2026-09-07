@@ -1,12 +1,12 @@
 /**
- * Showrush Bollyflix Provider (Ported from CSX by SaurabhKaperwan)
- * Dual-Audio Bollywood, Hollywood Hindi Dubbed, and South Indian Hindi releases with HubCloud & Pixeldrain streaming.
+ * Showrush Moviesmod Provider (Ported from CSX by SaurabhKaperwan)
+ * Dual-Audio Hollywood, Bollywood & Ongoing Web Series with HubCloud & FastDL streaming.
  */
 
-let cachedBollyDomain = null;
+let cachedMoviesmodDomain = null;
 let domainFetchTime = 0;
 
-async function getLiveBollyDomain() {
+async function getLiveMoviesmodDomain() {
   if (typeof Showrush !== 'undefined' && Showrush.settings && Showrush.settings.customBaseUrl) {
     return Showrush.settings.customBaseUrl.replace(/\/+$/, '');
   }
@@ -15,8 +15,8 @@ async function getLiveBollyDomain() {
   }
 
   const now = Date.now();
-  if (cachedBollyDomain && now - domainFetchTime < 1000 * 60 * 60) {
-    return cachedBollyDomain;
+  if (cachedMoviesmodDomain && now - domainFetchTime < 1000 * 60 * 60) {
+    return cachedMoviesmodDomain;
   }
 
   try {
@@ -27,23 +27,23 @@ async function getLiveBollyDomain() {
 
     if (res.ok && res.data) {
       const urls = typeof res.data === 'string' ? JSON.parse(res.data) : res.data;
-      if (urls.bollyflix) {
-        cachedBollyDomain = urls.bollyflix.replace(/\/+$/, '');
+      if (urls.moviesmod) {
+        cachedMoviesmodDomain = urls.moviesmod.replace(/\/+$/, '');
         domainFetchTime = now;
-        return cachedBollyDomain;
+        return cachedMoviesmodDomain;
       }
     }
   } catch (err) {
-    console.warn('[Bollyflix] Failed to fetch dynamic domain, using fallback:', err);
+    console.warn('[Moviesmod] Dynamic domain fetch notice:', err);
   }
 
-  cachedBollyDomain = 'https://bollyflix.af';
-  return cachedBollyDomain;
+  cachedMoviesmodDomain = 'https://moviesmod.zone';
+  return cachedMoviesmodDomain;
 }
 
-function parseBollyflixGrid(doc, defaultBadge = 'BOLLYWOOD') {
+function parseMoviesmodGrid(doc, defaultBadge = 'HD') {
   const items = [];
-  const articles = Array.from(doc.querySelectorAll('div.post-cards > article, article.latestPost, article.post, article'));
+  const articles = Array.from(doc.querySelectorAll('div.post-cards > article, article.post'));
 
   for (const art of articles) {
     const a = art.querySelector('a');
@@ -86,30 +86,29 @@ function parseBollyflixGrid(doc, defaultBadge = 'BOLLYWOOD') {
 }
 
 return {
-  id: 'com.community.bollyflix',
-  name: 'Bollyflix (Bollywood & OTT)',
+  id: 'com.community.moviesmod',
+  name: 'Moviesmod (Hollywood & Dual Audio)',
   version: '2.0.0',
   author: 'Showrush Community (ported from CSX by SaurabhKaperwan)',
-  description: 'Bollywood, Hollywood Hindi Dubbed, and South Indian Hindi releases with direct HubCloud & Pixeldrain streaming.',
+  description: 'Dual Audio Hollywood movies, Bollywood releases, and Web Series with HubCloud and FastDL direct streaming.',
   types: ['movie', 'tv'],
-  languages: ['hi'],
+  languages: ['en', 'hi'],
 
-  // 🌟 Source Offered Catalog: Live Feeds
   async getCatalogFeeds(page = 1) {
-    const domain = await getLiveBollyDomain();
+    const domain = await getLiveMoviesmodDomain();
 
     try {
-      const [homeRes, bollyRes, hollyRes, animeRes] = await Promise.allSettled([
-        Showrush.http.get(page === 1 ? `${domain}` : `${domain}/page/${page}`, {
+      const [homeRes, seriesRes, moviesRes, animeRes] = await Promise.allSettled([
+        Showrush.http.get(page === 1 ? `${domain}/` : `${domain}/page/${page}`, {
           headers: { 'User-Agent': 'Mozilla/5.0' },
         }),
-        Showrush.http.get(`${domain}/movies/bollywood/page/${page}`, {
+        Showrush.http.get(`${domain}/web-series/on-going/page/${page}`, {
           headers: { 'User-Agent': 'Mozilla/5.0' },
         }),
-        Showrush.http.get(`${domain}/movies/hollywood/page/${page}`, {
+        Showrush.http.get(`${domain}/movies/page/${page}`, {
           headers: { 'User-Agent': 'Mozilla/5.0' },
         }),
-        Showrush.http.get(`${domain}/anime/page/${page}`, {
+        Showrush.http.get(`${domain}/animated-web-series/page/${page}`, {
           headers: { 'User-Agent': 'Mozilla/5.0' },
         }),
       ]);
@@ -118,47 +117,35 @@ return {
 
       if (homeRes.status === 'fulfilled' && homeRes.value.ok && homeRes.value.data) {
         const doc = Showrush.dom.parse(homeRes.value.data);
-        const items = parseBollyflixGrid(doc, 'NEW');
+        const items = parseMoviesmodGrid(doc, 'FEATURED');
         if (items.length > 0) {
           feeds.push({
-            id: 'bf-latest',
-            title: '🔥 Bollyflix Latest Cinema',
+            id: 'mm-latest',
+            title: '🔥 Moviesmod Trending Releases',
             items: items.slice(0, 18),
           });
         }
       }
 
-      if (bollyRes.status === 'fulfilled' && bollyRes.value.ok && bollyRes.value.data) {
-        const doc = Showrush.dom.parse(bollyRes.value.data);
-        const items = parseBollyflixGrid(doc, 'BOLLYWOOD');
+      if (seriesRes.status === 'fulfilled' && seriesRes.value.ok && seriesRes.value.data) {
+        const doc = Showrush.dom.parse(seriesRes.value.data);
+        const items = parseMoviesmodGrid(doc, 'SERIES');
         if (items.length > 0) {
           feeds.push({
-            id: 'bf-bollywood',
-            title: '🇮🇳 Bollywood Movies (Hindi ORG)',
+            id: 'mm-series',
+            title: '📺 Ongoing Web Series',
             items: items.slice(0, 18),
           });
         }
       }
 
-      if (hollyRes.status === 'fulfilled' && hollyRes.value.ok && hollyRes.value.data) {
-        const doc = Showrush.dom.parse(hollyRes.value.data);
-        const items = parseBollyflixGrid(doc, 'HINDI DUB');
+      if (moviesRes.status === 'fulfilled' && moviesRes.value.ok && moviesRes.value.data) {
+        const doc = Showrush.dom.parse(moviesRes.value.data);
+        const items = parseMoviesmodGrid(doc, '1080p');
         if (items.length > 0) {
           feeds.push({
-            id: 'bf-hollywood',
-            title: '🌍 Hollywood Movies (Hindi Dubbed)',
-            items: items.slice(0, 18),
-          });
-        }
-      }
-
-      if (animeRes.status === 'fulfilled' && animeRes.value.ok && animeRes.value.data) {
-        const doc = Showrush.dom.parse(animeRes.value.data);
-        const items = parseBollyflixGrid(doc, 'ANIME');
-        if (items.length > 0) {
-          feeds.push({
-            id: 'bf-anime',
-            title: '⛩️ Anime Series (Hindi Dubbed)',
+            id: 'mm-movies',
+            title: '🎬 Hollywood & Dual Audio Movies',
             items: items.slice(0, 18),
           });
         }
@@ -166,14 +153,14 @@ return {
 
       return feeds;
     } catch (err) {
-      console.warn('[Bollyflix getCatalogFeeds] Notice:', err);
+      console.warn('[Moviesmod getCatalogFeeds] Notice:', err);
       return [];
     }
   },
 
   async search(query) {
     if (!query) return [];
-    const domain = await getLiveBollyDomain();
+    const domain = await getLiveMoviesmodDomain();
     const cleanQuery = query
       .replace(/\b(480p|720p|1080p|2160p|4k|hdr|web-dl|dual audio|hindi|season \d+|s\d+|ep \d+|part \d+)\b/gi, '')
       .replace(/\[.*?\]|\(.*?\)/g, '')
@@ -181,13 +168,13 @@ return {
 
     try {
       const searchRes = await Showrush.http.get(
-        `${domain}/search/${encodeURIComponent(cleanQuery || query)}/page/1/`,
+        `${domain}/search/${encodeURIComponent(cleanQuery || query)}/page/1`,
         { headers: { 'User-Agent': 'Mozilla/5.0' } }
       );
 
       if (searchRes.ok && searchRes.data) {
         const doc = Showrush.dom.parse(searchRes.data);
-        return parseBollyflixGrid(doc);
+        return parseMoviesmodGrid(doc);
       }
     } catch {}
 
@@ -197,15 +184,13 @@ return {
   async getStreams(query) {
     const { tmdbId, imdbId, title, type = 'movie', season = 1, episode = 1, sourceUrl } = query;
 
-    // 1. Direct sourceUrl resolution ONLY if it belongs to Bollyflix
-    if (sourceUrl && (sourceUrl.includes('bollyflix') || (!sourceUrl.includes('moviesdrive') && !sourceUrl.includes('vegamovies') && query.preferredPluginId === 'com.community.bollyflix'))) {
+    if (sourceUrl && (sourceUrl.includes('moviesmod') || query.preferredPluginId === 'com.community.moviesmod')) {
       try {
         const streams = await this.getSourceStreams(sourceUrl, String(episode));
         if (streams.length > 0) return streams;
       } catch {}
     }
 
-    // 2. Search Bollyflix catalog
     if (title) {
       try {
         const searchResults = await this.search(title);
@@ -215,7 +200,7 @@ return {
           if (streams.length > 0) return streams;
         }
       } catch (err) {
-        console.warn('[Bollyflix getStreams] Search notice:', err);
+        console.warn('[Moviesmod getStreams] Search notice:', err);
       }
     }
 
@@ -232,7 +217,6 @@ return {
       const html = typeof res.data === 'string' ? res.data : '';
       const streams = [];
 
-      // 1. Gather all download buttons / links
       const btnMatches = Array.from(
         html.matchAll(/href=["'](https?:\/\/[^"']*(?:hubcloud|vcloud|fastdl|sidexfee|download|file)[^"']*)["']/gi)
       ).map((m) => m[1].replace(/&amp;/g, '&'));
@@ -243,34 +227,17 @@ return {
 
       for (const rawLink of uniqueLinks.slice(0, 4)) {
         try {
-          let resolved = rawLink;
-
-          // Check if sidexfee / bypass is needed
-          if (!resolved.includes('fastdl') && resolved.includes('?id=')) {
-            const sid = resolved.split('id=').pop()?.split('&')[0];
-            if (sid) {
-              const bRes = await Showrush.http.get(`https://web.sidexfee.com/?id=${sid}`);
-              if (bRes.ok && bRes.data) {
-                const bStr = typeof bRes.data === 'string' ? bRes.data : JSON.stringify(bRes.data);
-                const lm = bStr.match(/link":"([^"]+)"/);
-                if (lm) {
-                  resolved = atob(lm[1].replace(/\\\//g, '/'));
-                }
-              }
-            }
-          }
-
           if (Showrush.extractors && typeof Showrush.extractors.hubcloud === 'function') {
-            const extracted = await Showrush.extractors.hubcloud(resolved, sourceId);
+            const extracted = await Showrush.extractors.hubcloud(rawLink, sourceId);
             if (extracted && extracted.length > 0) {
               for (const [idx, s] of extracted.entries()) {
                 streams.push({
                   ...s,
-                  id: `bf-${idx}-${Date.now()}`,
-                  name: `Bollyflix • ${s.server || 'Direct'}`,
-                  server: `Bollyflix (${s.server || 'Direct'})`,
-                  pluginId: 'com.community.bollyflix',
-                  pluginName: 'Bollyflix (Bollywood & OTT)',
+                  id: `mm-${idx}-${Date.now()}`,
+                  name: `Moviesmod • ${s.server || 'Direct'}`,
+                  server: `Moviesmod (${s.server || 'Direct'})`,
+                  pluginId: 'com.community.moviesmod',
+                  pluginName: 'Moviesmod (Hollywood & Dual Audio)',
                 });
               }
               if (streams.length >= 3) break;
@@ -293,7 +260,7 @@ return {
 
       return streams;
     } catch (err) {
-      console.warn('[Bollyflix getSourceStreams] Notice:', err);
+      console.warn('[Moviesmod getSourceStreams] Notice:', err);
       return [];
     }
   },

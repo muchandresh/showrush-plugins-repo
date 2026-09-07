@@ -362,20 +362,8 @@ return {
       if (streams.length === 0) {
         for (const nex of uniqueNex.slice(0, 4)) {
           try {
-            let cloudUrl = nex;
-            if (nex.includes('nexdrive')) {
-              const nRes = await Showrush.http.get(nex, {
-                headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': sourceId },
-              });
-              if (nRes.ok && nRes.data) {
-                const nHtml = typeof nRes.data === 'string' ? nRes.data : '';
-                const match = nHtml.match(/href=["'](https?:\/\/[^"']*(?:vcloud|hubcloud)[^"']*)["']/i);
-                if (match) cloudUrl = match[1];
-              }
-            }
-
-            if (cloudUrl.includes('vcloud') || cloudUrl.includes('hubcloud')) {
-              const extracted = await Showrush.extractors.hubcloud(cloudUrl, nex);
+            const extracted = await Showrush.extractors.hubcloud(nex, sourceId);
+            if (Array.isArray(extracted) && extracted.length > 0) {
               for (const [idx, s] of extracted.entries()) {
                 streams.push({
                   ...s,
@@ -390,6 +378,18 @@ return {
             }
           } catch {}
         }
+      }
+
+      // Apply plugin settings: preferred server priority & preferred quality
+      const preferredServer = this.settings?.preferred_server || 'auto';
+      if (preferredServer !== 'auto' && streams.length > 1) {
+        streams.sort((a, b) => {
+          const aMatch = a.server?.toLowerCase().includes(preferredServer) || a.name?.toLowerCase().includes(preferredServer);
+          const bMatch = b.server?.toLowerCase().includes(preferredServer) || b.name?.toLowerCase().includes(preferredServer);
+          if (aMatch && !bMatch) return -1;
+          if (!aMatch && bMatch) return 1;
+          return 0;
+        });
       }
 
       return streams;
