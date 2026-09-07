@@ -144,7 +144,76 @@ return {
     }
   },
 
-  async getStreams() {
-    return [];
+  async getStreams(query) {
+    const { tmdbId, imdbId, title, type = 'movie', season = 1, episode = 1 } = query;
+    let targetTmdbId = tmdbId;
+    let targetImdbId = imdbId;
+
+    // 1. Resolve IMDb ID via Cinemeta if missing
+    if (!targetImdbId && (title || targetTmdbId)) {
+      try {
+        const isTv = type === 'tv' || type === 'series';
+        const searchTitle = title || (targetTmdbId ? String(targetTmdbId) : '');
+        if (searchTitle) {
+          const searchRes = await Showrush.http.get(
+            `https://v3-cinemeta.strem.io/catalog/${isTv ? 'series' : 'movie'}/top/search=${encodeURIComponent(searchTitle)}.json`
+          );
+          if (searchRes.ok && searchRes.data) {
+            const data = typeof searchRes.data === 'string' ? JSON.parse(searchRes.data) : searchRes.data;
+            if (Array.isArray(data?.metas) && data.metas.length > 0) {
+              targetImdbId = data.metas[0].id || data.metas[0].imdb_id;
+            }
+          }
+        }
+      } catch {}
+    }
+
+    if (!targetTmdbId && !targetImdbId && title) {
+      try {
+        const searchRes = await this.search(title);
+        if (searchRes.length > 0 && searchRes[0].id) {
+          if (String(searchRes[0].id).startsWith('tt')) {
+            targetImdbId = searchRes[0].id;
+          } else {
+            targetTmdbId = searchRes[0].id;
+          }
+        }
+      } catch {}
+    }
+
+    if (!targetTmdbId && !targetImdbId && !title) return [];
+
+    const streams = [];
+
+    // 2. Direct VidSrc HLS extraction
+    if (Showrush?.extractors?.vidsrc) {
+      try {
+        const sources = await Showrush.extractors.vidsrc({
+          tmdbId: targetTmdbId,
+          imdbId: targetImdbId,
+          title,
+          type,
+          season,
+          episode,
+        });
+
+        if (Array.isArray(sources) && sources.length > 0) {
+          for (const [idx, s] of sources.entries()) {
+            streams.push({
+              ...s,
+              id: `cinetmdb-${idx + 1}-${Date.now()}`,
+              pluginId: 'com.community.cinetmdb',
+              pluginName: 'CineTmdb (OTT & Indian Cinema)',
+              name: `CineTmdb • ${s.server || `Server ${idx + 1}`}`,
+              server: `CineTmdb OTT Stream ${idx + 1}`,
+            });
+          }
+        }
+      } catch (err) {
+        console.warn('[CineTmdb Extractor] Notice:', err);
+      }
+    }
+
+    return streams;
   },
 };
