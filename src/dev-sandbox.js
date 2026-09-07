@@ -181,18 +181,41 @@ export function loadPluginInstance(pluginIdOrFolder, settings = {}) {
   let scriptContent = '';
   let manifest = null;
 
-  const folderPath = path.join(pluginsDir, pluginIdOrFolder);
-  const rootFilePath = path.join(rootDir, `${pluginIdOrFolder}.js`);
+  let targetDir = path.join(pluginsDir, pluginIdOrFolder);
 
-  if (fs.existsSync(path.join(folderPath, 'index.js'))) {
-    scriptContent = fs.readFileSync(path.join(folderPath, 'index.js'), 'utf-8');
-    if (fs.existsSync(path.join(folderPath, 'manifest.json'))) {
-      manifest = JSON.parse(fs.readFileSync(path.join(folderPath, 'manifest.json'), 'utf-8'));
+  if (!fs.existsSync(path.join(targetDir, 'index.js'))) {
+    // Search all plugin directories for matching manifest.id or folder name
+    const dirs = fs.readdirSync(pluginsDir, { withFileTypes: true })
+      .filter((d) => d.isDirectory())
+      .map((d) => d.name);
+
+    const cleanQuery = pluginIdOrFolder.toLowerCase().replace(/^com\.community\./, '').replace(/^com\.sdk\./, '').replace(/^cs\./, '').replace(/[^a-z0-9]/g, '');
+
+    for (const d of dirs) {
+      const candidateDir = path.join(pluginsDir, d);
+      const manifestPath = path.join(candidateDir, 'manifest.json');
+      if (fs.existsSync(manifestPath)) {
+        try {
+          const m = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
+          if (m.id === pluginIdOrFolder || d.toLowerCase() === pluginIdOrFolder.toLowerCase() || d.toLowerCase() === cleanQuery) {
+            targetDir = candidateDir;
+            manifest = m;
+            break;
+          }
+        } catch {}
+      }
     }
-  } else if (fs.existsSync(rootFilePath)) {
-    scriptContent = fs.readFileSync(rootFilePath, 'utf-8');
+  }
+
+  if (fs.existsSync(path.join(targetDir, 'index.js'))) {
+    scriptContent = fs.readFileSync(path.join(targetDir, 'index.js'), 'utf-8');
+    if (!manifest && fs.existsSync(path.join(targetDir, 'manifest.json'))) {
+      manifest = JSON.parse(fs.readFileSync(path.join(targetDir, 'manifest.json'), 'utf-8'));
+    }
+  } else if (fs.existsSync(path.join(rootDir, `${pluginIdOrFolder}.js`))) {
+    scriptContent = fs.readFileSync(path.join(rootDir, `${pluginIdOrFolder}.js`), 'utf-8');
   } else {
-    throw new Error(`Plugin not found: ${pluginIdOrFolder}`);
+    throw new Error(`Plugin not found in src/plugins/: ${pluginIdOrFolder}`);
   }
 
   const http = createHttpEngine();

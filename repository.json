@@ -35,7 +35,9 @@
           "placeholder": "Enter AniList token..."
         }
       ],
-      "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/anidb.js"
+      "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/src/plugins/anidb/index.js",
+      "manifestUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/src/plugins/anidb/manifest.json",
+      "pluginDir": "src/plugins/anidb"
     },
     {
       "id": "com.community.anivexa",
@@ -53,7 +55,9 @@
         "all"
       ],
       "settingsSchema": [],
-      "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/anivexa.js"
+      "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/src/plugins/anivexa/index.js",
+      "manifestUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/src/plugins/anivexa/manifest.json",
+      "pluginDir": "src/plugins/anivexa"
     },
     {
       "id": "com.community.bollyflix",
@@ -86,7 +90,9 @@
           "default": true
         }
       ],
-      "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/bollyflix.js"
+      "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/src/plugins/bollyflix/index.js",
+      "manifestUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/src/plugins/bollyflix/manifest.json",
+      "pluginDir": "src/plugins/bollyflix"
     },
     {
       "id": "com.community.cinesimkl",
@@ -105,7 +111,9 @@
       ],
       "customBaseUrl": "https://api.simkl.com",
       "settingsSchema": [],
-      "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/cinesimkl.js"
+      "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/src/plugins/cinesimkl/index.js",
+      "manifestUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/src/plugins/cinesimkl/manifest.json",
+      "pluginDir": "src/plugins/cinesimkl"
     },
     {
       "id": "com.community.cinestream",
@@ -153,7 +161,9 @@
           "placeholder": "Enter Real-Debrid token..."
         }
       ],
-      "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/cinestream.js"
+      "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/src/plugins/cinestream/index.js",
+      "manifestUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/src/plugins/cinestream/manifest.json",
+      "pluginDir": "src/plugins/cinestream"
     },
     {
       "id": "com.community.cinetmdb",
@@ -170,7 +180,9 @@
         "all"
       ],
       "settingsSchema": [],
-      "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/cinetmdb.js"
+      "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/src/plugins/cinetmdb/index.js",
+      "manifestUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/src/plugins/cinetmdb/manifest.json",
+      "pluginDir": "src/plugins/cinetmdb"
     },
     {
       "id": "com.community.dramacool",
@@ -190,7 +202,9 @@
       ],
       "customBaseUrl": "https://dramacool.bg",
       "settingsSchema": [],
-      "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/dramacool.js"
+      "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/src/plugins/dramacool/index.js",
+      "manifestUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/src/plugins/dramacool/manifest.json",
+      "pluginDir": "src/plugins/dramacool"
     },
     {
       "id": "com.community.moviesdrive",
@@ -230,7 +244,9 @@
           "default": true
         }
       ],
-      "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/moviesdrive.js"
+      "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/src/plugins/moviesdrive/index.js",
+      "manifestUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/src/plugins/moviesdrive/manifest.json",
+      "pluginDir": "src/plugins/moviesdrive"
     },
     {
       "id": "com.community.moviesmod",
@@ -256,7 +272,9 @@
           "default": true
         }
       ],
-      "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/moviesmod.js"
+      "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/src/plugins/moviesmod/index.js",
+      "manifestUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/src/plugins/moviesmod/manifest.json",
+      "pluginDir": "src/plugins/moviesmod"
     },
     {
       "id": "com.community.resolvers",
@@ -274,7 +292,9 @@
         "all"
       ],
       "settingsSchema": [],
-      "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/resolvers.js"
+      "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/src/plugins/resolvers/index.js",
+      "manifestUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/src/plugins/resolvers/manifest.json",
+      "pluginDir": "src/plugins/resolvers"
     },
     {
       "id": "com.community.superstream",
@@ -292,7 +312,9 @@
         "all"
       ],
       "settingsSchema": [],
-      "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/superstream.js"
+      "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/src/plugins/superstream/index.js",
+      "manifestUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/src/plugins/superstream/manifest.json",
+      "pluginDir": "src/plugins/superstream"
     },
     {
       "id": "com.community.vegamovies",
@@ -332,7 +354,9 @@
           "default": true
         }
       ],
-      "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/vegamovies.js"
+      "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/src/plugins/vegamovies/index.js",
+      "manifestUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/src/plugins/vegamovies/manifest.json",
+      "pluginDir": "src/plugins/vegamovies"
     },
     {
       "id": "com.community.vidnest-anime",
@@ -349,7 +373,9 @@
         "en"
       ],
       "settingsSchema": [],
-      "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/vidnest-anime.js"
+      "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/src/plugins/vidnest-anime/index.js",
+      "manifestUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/src/plugins/vidnest-anime/manifest.json",
+      "pluginDir": "src/plugins/vidnest-anime"
     },
     {
       "id": "com.community.vidsrc-direct",
@@ -376,7 +402,9 @@
           "default": 3
         }
       ],
-      "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/vidsrc-direct.js"
+      "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/src/plugins/vidsrc-direct/index.js",
+      "manifestUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/src/plugins/vidsrc-direct/manifest.json",
+      "pluginDir": "src/plugins/vidsrc-direct"
     },
     {
       "id": "com.community.vixsrc",
@@ -394,7 +422,9 @@
         "all"
       ],
       "settingsSchema": [],
-      "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/vixsrc.js"
+      "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/src/plugins/vixsrc/index.js",
+      "manifestUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/src/plugins/vixsrc/manifest.json",
+      "pluginDir": "src/plugins/vixsrc"
     }
   ]
 }

@@ -33,17 +33,15 @@ export function buildRepository() {
       const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
       const code = fs.readFileSync(indexPath, 'utf-8');
 
-      const outFilename = `${dir}.js`;
-      const outPath = path.join(rootDir, outFilename);
-      fs.writeFileSync(outPath, code);
-
       const repoEntry = {
         ...manifest,
-        scriptUrl: `https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/${outFilename}`,
+        scriptUrl: `https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/src/plugins/${dir}/index.js`,
+        manifestUrl: `https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/src/plugins/${dir}/manifest.json`,
+        pluginDir: `src/plugins/${dir}`,
       };
 
       compiledPlugins.push(repoEntry);
-      console.log(`  ✓ Packaged [${manifest.id}] -> ${outFilename}`);
+      console.log(`  ✓ Packaged [${manifest.id}] (${dir}) -> src/plugins/${dir}/index.js`);
     } catch (err) {
       console.error(`  ❌ Failed to package ${dir}:`, err);
     }
