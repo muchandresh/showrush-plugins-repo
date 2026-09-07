@@ -17,7 +17,7 @@ return {
     if (!title && !tmdbId && !imdbId) return [];
 
     try {
-      const BASE = 'https://epeng.animeapps.top';
+      const BASE = (this.settings?.customBaseUrl || (typeof Showrush !== 'undefined' && Showrush.settings?.customBaseUrl) || 'https://epeng.animeapps.top').replace(/\/+$/, '');
       let targetId = query.anilistId;
       if (!targetId && title && Showrush?.anime?.getMapping) {
         try {

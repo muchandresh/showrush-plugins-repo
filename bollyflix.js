@@ -7,6 +7,13 @@ let cachedBollyDomain = null;
 let domainFetchTime = 0;
 
 async function getLiveBollyDomain() {
+  if (typeof Showrush !== 'undefined' && Showrush.settings && Showrush.settings.customBaseUrl) {
+    return Showrush.settings.customBaseUrl.replace(/\/+$/, '');
+  }
+  if (this && this.settings && this.settings.customBaseUrl) {
+    return this.settings.customBaseUrl.replace(/\/+$/, '');
+  }
+
   const now = Date.now();
   if (cachedBollyDomain && now - domainFetchTime < 1000 * 60 * 60) {
     return cachedBollyDomain;
