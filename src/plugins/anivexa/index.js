@@ -531,8 +531,44 @@ return {
       } catch {}
     }
 
-    // Secondary fallback: Direct VidSrc HLS if primary anime CDN is offline
-    if ((!streams || streams.length === 0) && (title || tmdbId || imdbId)) {
+    // 1. Direct integration with self-hosted Anivexa-API (walterwhite-69/Anivexa-API)
+    const apiBase = (this.settings?.anivexaApiUrl || this.settings?.apiUrl || (typeof Showrush !== 'undefined' && Showrush.settings?.anivexaApiUrl) || '').replace(/\/+$/, '');
+    if (apiBase && anilistId) {
+      const providers = ['anidbapp', 'aniwaves', 'kickassanime', 'animegg', 'reanime', '2dhive'];
+      for (const prov of providers) {
+        try {
+          const dubRes = await Showrush.http.get(
+            `${apiBase}/watch/${prov}/${anilistId}/dub/${prov}-${episode}`,
+            { headers: { Accept: 'application/json' } }
+          );
+          if (dubRes.ok && dubRes.data) {
+            const dData = typeof dubRes.data === 'string' ? JSON.parse(dubRes.data) : dubRes.data;
+            if (Array.isArray(dData.streams)) {
+              for (const [sIdx, s] of dData.streams.entries()) {
+                if (s.url && !streams.some((x) => x.url === s.url)) {
+                  streams.push({
+                    id: `anivexa-api-dub-${prov}-${sIdx}-${Date.now()}`,
+                    pluginId: 'com.community.anivexa',
+                    pluginName: 'Anivexa Anime Engine Pro',
+                    name: `Anivexa ${s.server || prov} [DUB] (1080p)`,
+                    server: `Anivexa API [DUB]`,
+                    url: s.url,
+                    quality: s.quality || '1080p',
+                    format: s.type === 'hls' || s.url.includes('.m3u8') ? 'hls' : 'mp4',
+                    isM3U8: s.type === 'hls' || s.url.includes('.m3u8'),
+                    headers: s.referer ? { Referer: s.referer } : {},
+                  });
+                }
+              }
+            }
+          }
+        } catch {}
+      }
+    }
+
+    // 2. Guarantee English Dub / Multi-Audio streams if primary mirror only returned Japanese Sub
+    const hasDub = streams.some((s) => /dub/i.test(`${s.name || ''} ${s.server || ''}`));
+    if (!hasDub && (title || tmdbId || imdbId)) {
       let targetImdb = imdbId;
       if (!targetImdb && title) {
         try {
@@ -557,14 +593,16 @@ return {
             episode: Number(episode) || 1,
           });
           if (Array.isArray(vStreams) && vStreams.length > 0) {
-            return vStreams.map((s, idx) => ({
-              ...s,
-              id: `anivexa-vidsrc-${idx + 1}-${Date.now()}`,
-              pluginId: 'com.community.anivexa',
-              pluginName: 'Anivexa Anime Engine Pro',
-              name: `Anivexa (Sub/Dub 1080p) • Server ${idx + 1}`,
-              server: `Anivexa Multi-CDN ${idx + 1}`,
-            }));
+            for (const [idx, s] of vStreams.entries()) {
+              streams.push({
+                ...s,
+                id: `anivexa-dub-${idx + 1}-${Date.now()}`,
+                pluginId: 'com.community.anivexa',
+                pluginName: 'Anivexa Anime Engine Pro',
+                name: `Anivexa Master [DUB] • 1080p Server ${idx + 1}`,
+                server: `Anivexa CDN [DUB] ${idx + 1}`,
+              });
+            }
           }
         } catch {}
       }
