@@ -1,0 +1,17 @@
+{
+  "id": "com.community.resolvers",
+  "name": "Showrush Community Resolvers (Master Bridge)",
+  "version": "1.1.0",
+  "author": "Showrush Community",
+  "description": "Universal cyberlocker & extractor pack (HubCloud, StreamWish, FileLions, DoodStream, Streamtape, Filemoon, Mixdrop, Vidplay, Pixeldrain) with dynamic AniList title mapping.",
+  "category": "plugin",
+  "types": [
+    "movie",
+    "tv",
+    "anime"
+  ],
+  "languages": [
+    "all"
+  ],
+  "settingsSchema": []
+}

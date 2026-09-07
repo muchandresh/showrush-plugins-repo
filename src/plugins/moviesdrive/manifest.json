@@ -1,0 +1,39 @@
+{
+  "id": "com.community.moviesdrive",
+  "name": "MoviesDrive (Bollywood & OTT)",
+  "version": "2.1.0",
+  "author": "Showrush Community (CSX)",
+  "description": "Dual Audio Bollywood, Hollywood, Netflix, Prime Video, Hotstar & K-Drama releases with direct HubCloud & Pixeldrain streaming.",
+  "category": "pro_plugin",
+  "types": [
+    "movie",
+    "tv"
+  ],
+  "languages": [
+    "hi"
+  ],
+  "customBaseUrl": "https://new3.moviesdrive.christmas",
+  "settingsSchema": [
+    {
+      "key": "prefer1080p",
+      "label": "Prefer 1080p Full HD",
+      "type": "boolean",
+      "description": "Prioritize 1080p and 4K streams over 720p/480p",
+      "default": true
+    },
+    {
+      "key": "enableHubCloudFsl",
+      "label": "Enable Cloudflare R2 Mirrors",
+      "type": "boolean",
+      "description": "Direct Cloudflare R2 high-speed download mirrors",
+      "default": true
+    },
+    {
+      "key": "enablePixeldrain",
+      "label": "Enable Pixeldrain Mirrors",
+      "type": "boolean",
+      "description": "Include Pixeldrain direct stream links",
+      "default": true
+    }
+  ]
+}

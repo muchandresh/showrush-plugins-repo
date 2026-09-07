@@ -1,0 +1,32 @@
+{
+  "id": "com.community.bollyflix",
+  "name": "Bollyflix (Bollywood & OTT)",
+  "version": "2.1.0",
+  "author": "Showrush Community (CSX)",
+  "description": "Bollywood, Hollywood Hindi Dubbed, and South Indian Hindi releases with direct HubCloud & Pixeldrain streaming.",
+  "category": "pro_plugin",
+  "types": [
+    "movie",
+    "tv"
+  ],
+  "languages": [
+    "hi"
+  ],
+  "customBaseUrl": "https://bollyflix.af",
+  "settingsSchema": [
+    {
+      "key": "prefer1080p",
+      "label": "Prefer 1080p Full HD",
+      "type": "boolean",
+      "description": "Prioritize 1080p and 4K streams over 720p/480p",
+      "default": true
+    },
+    {
+      "key": "enablePixeldrain",
+      "label": "Enable Pixeldrain Mirrors",
+      "type": "boolean",
+      "description": "Include Pixeldrain direct stream links",
+      "default": true
+    }
+  ]
+}

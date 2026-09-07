@@ -1,0 +1,26 @@
+{
+  "name": "showrush-plugins-repo",
+  "version": "1.0.0",
+  "description": "> Ad-free streaming extensions for the app — inspired by plugins for Cloudstreme and nuvio.",
+  "main": "allwish.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/muchandresh/showrush-plugins-repo.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "build": "node src/builder.js",
+    "test": "node src/test-cli.js"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}

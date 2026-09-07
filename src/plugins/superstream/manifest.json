@@ -1,0 +1,17 @@
+{
+  "id": "com.community.superstream",
+  "name": "SuperStream (Hollywood & Cinema Feeds)",
+  "version": "2.0.0",
+  "author": "Showrush Community",
+  "description": "Curated Cinemeta Hollywood, trending box office, and top-rated movies and series catalog feeds.",
+  "category": "catalog",
+  "types": [
+    "movie",
+    "tv"
+  ],
+  "languages": [
+    "en",
+    "all"
+  ],
+  "settingsSchema": []
+}

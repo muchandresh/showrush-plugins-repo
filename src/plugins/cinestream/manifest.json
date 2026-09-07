@@ -1,0 +1,47 @@
+{
+  "id": "com.community.cinestream",
+  "name": "CineStream (Cinemeta & Multi-CDN)",
+  "version": "2.5.0",
+  "author": "Showrush Community (ported from CSX)",
+  "description": "High-performance aggregator combining Cinemeta catalogs (Top Movies, Series, Anime, Genres) with multi-CDN direct streaming resolvers.",
+  "category": "pro_plugin",
+  "types": [
+    "movie",
+    "tv"
+  ],
+  "languages": [
+    "en",
+    "all"
+  ],
+  "customBaseUrl": "https://v3-cinemeta.strem.io",
+  "settingsSchema": [
+    {
+      "key": "catalogCategory",
+      "label": "Default Home Catalog",
+      "type": "select",
+      "description": "Catalog to feature when browsing this provider",
+      "default": "trending",
+      "options": [
+        {
+          "label": "Trending & Popular",
+          "value": "trending"
+        },
+        {
+          "label": "Top Rated Cinema",
+          "value": "top"
+        },
+        {
+          "label": "New Releases",
+          "value": "new"
+        }
+      ]
+    },
+    {
+      "key": "debridApiKey",
+      "label": "Real-Debrid API Key",
+      "type": "password",
+      "description": "Optional Real-Debrid token for ultra-fast cached torrent streaming",
+      "placeholder": "Enter Real-Debrid token..."
+    }
+  ]
+}

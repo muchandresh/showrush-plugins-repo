@@ -1,0 +1,25 @@
+{
+  "id": "com.community.moviesmod",
+  "name": "Moviesmod (Bollywood & Hollywood FastDL)",
+  "version": "2.0.0",
+  "author": "Showrush Community (CSX)",
+  "description": "Bollywood, Hollywood Hindi Dubbed, FastDL, and Cloudflare R2 direct 1080p streaming.",
+  "category": "pro_plugin",
+  "types": [
+    "movie",
+    "tv"
+  ],
+  "languages": [
+    "hi",
+    "en"
+  ],
+  "customBaseUrl": "https://moviesmod.org.in",
+  "settingsSchema": [
+    {
+      "key": "prefer1080p",
+      "label": "Prefer 1080p Full HD",
+      "type": "boolean",
+      "default": true
+    }
+  ]
+}

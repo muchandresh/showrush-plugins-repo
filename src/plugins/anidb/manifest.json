@@ -1,0 +1,31 @@
+{
+  "id": "com.community.anidb",
+  "name": "Ani-DB Anime (Sub/Dub)",
+  "version": "2.2.0",
+  "author": "Showrush Community",
+  "description": "Dedicated high-speed Anime streaming provider with AniList simulcast catalogs, SUB & DUB audio, and WebVTT captions.",
+  "category": "pro_plugin",
+  "types": [
+    "anime"
+  ],
+  "languages": [
+    "ja",
+    "en"
+  ],
+  "settingsSchema": [
+    {
+      "key": "preferDub",
+      "label": "Prefer English Dubbed Audio",
+      "type": "boolean",
+      "description": "Prioritize English DUB streams over Japanese SUB when both are available",
+      "default": false
+    },
+    {
+      "key": "anilistToken",
+      "label": "Custom AniList Token",
+      "type": "password",
+      "description": "Optional token for user watchlist synchronization",
+      "placeholder": "Enter AniList token..."
+    }
+  ]
+}

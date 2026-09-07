@@ -1,0 +1,17 @@
+{
+  "id": "com.community.vixsrc",
+  "name": "VixSrc Direct HLS",
+  "version": "1.1.0",
+  "author": "Community",
+  "description": "High-speed direct master.m3u8 HLS streams with multi-resolution playback.",
+  "category": "plugin",
+  "types": [
+    "movie",
+    "tv"
+  ],
+  "languages": [
+    "en",
+    "all"
+  ],
+  "settingsSchema": []
+}

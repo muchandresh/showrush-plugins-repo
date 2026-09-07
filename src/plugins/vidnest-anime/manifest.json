@@ -1,0 +1,16 @@
+{
+  "id": "com.community.vidnest-anime",
+  "name": "Vidnest Anime Multi-Server",
+  "version": "1.3.0",
+  "author": "Community",
+  "description": "Vidnest Anime streaming with AniList mapping and Satoru, Pahe, Anya, and Miko servers.",
+  "category": "plugin",
+  "types": [
+    "anime"
+  ],
+  "languages": [
+    "ja",
+    "en"
+  ],
+  "settingsSchema": []
+}

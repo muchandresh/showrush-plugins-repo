@@ -1,0 +1,16 @@
+{
+  "id": "com.community.cinetmdb",
+  "name": "CineTmdb (OTT & Indian Cinema)",
+  "version": "2.0.0",
+  "author": "Showrush Community (ported from CSX)",
+  "description": "OTT Network catalogs (Netflix, Prime, Hotstar, Indian Cinema, Korean Series) with fast multi-server streaming.",
+  "category": "pro_plugin",
+  "types": [
+    "movie",
+    "tv"
+  ],
+  "languages": [
+    "all"
+  ],
+  "settingsSchema": []
+}

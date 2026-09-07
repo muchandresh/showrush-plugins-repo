@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Showrush Plugin DevBench • Live Test Suite</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f5f3ff',
+              500: '#8b5cf6',
+              600: '#7c3aed',
+              700: '#6d28d9',
+              900: '#4c1d95',
+            },
+            dark: {
+              800: '#18181b',
+              850: '#141416',
+              900: '#0f0f11',
+              950: '#09090b',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0f0f11; }
+    ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
+    .tab-active { border-bottom: 2px solid #8b5cf6; color: #a78bfa; }
+  </style>
+</head>
+<body class="bg-dark-950 text-zinc-100 min-h-screen flex flex-col font-sans selection:bg-purple-500/30">
+
+  <!-- TOP NAVIGATION BAR -->
+  <header class="h-16 border-b border-zinc-800 bg-dark-900/80 backdrop-blur px-6 flex items-center justify-between sticky top-0 z-30">
+    <div class="flex items-center space-x-3">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-purple-600 via-indigo-600 to-cyan-400 flex items-center justify-center font-black text-white text-lg shadow-lg shadow-purple-500/20">
+        SR
+      </div>
+      <div>
+        <div class="flex items-center space-x-2">
+          <span class="font-bold text-base tracking-tight text-white">Showrush DevBench</span>
+          <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-purple-950/80 border border-purple-800 text-purple-300">v3.3 Architecture</span>
+        </div>
+        <p class="text-xs text-zinc-400">Interactive Plugin & Extractor Sandbox</p>
+      </div>
+    </div>
+
+    <div class="flex items-center space-x-4">
+      <div class="flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-emerald-950/40 border border-emerald-800/60 text-emerald-400 text-xs font-medium">
+        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        <span>Sandbox Live</span>
+      </div>
+      <button onclick="rebuildRepository()" id="btn-rebuild" class="px-3.5 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs font-semibold text-zinc-200 border border-zinc-700 transition flex items-center space-x-1.5">
+        <span>📦 Rebuild Repository</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN WORKSPACE -->
+  <div class="flex-1 flex overflow-hidden">
+
+    <!-- LEFT SIDEBAR: PLUGIN SELECTOR -->
+    <aside class="w-80 border-r border-zinc-800 bg-dark-900 flex flex-col h-[calc(100vh-4rem)]">
+      <!-- Search & Filters -->
+      <div class="p-4 border-b border-zinc-800 space-y-3">
+        <div class="relative">
+          <input type="text" id="plugin-search" oninput="filterPlugins()" placeholder="Search plugins..." class="w-full pl-9 pr-3 py-2 bg-dark-950 border border-zinc-800 rounded-lg text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-purple-500 transition">
+          <svg class="w-4 h-4 text-zinc-500 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+        </div>
+
+        <div class="flex flex-wrap gap-1.5 text-[11px]" id="filter-chips">
+          <button onclick="setFilter('all')" class="chip px-2.5 py-1 rounded-md bg-purple-600 text-white font-medium">All (<span id="count-all">0</span>)</button>
+          <button onclick="setFilter('pro_plugin')" class="chip px-2.5 py-1 rounded-md bg-zinc-800 text-zinc-400 hover:text-zinc-200">Pro</button>
+          <button onclick="setFilter('streams')" class="chip px-2.5 py-1 rounded-md bg-zinc-800 text-zinc-400 hover:text-zinc-200">Scrapers</button>
+          <button onclick="setFilter('anime')" class="chip px-2.5 py-1 rounded-md bg-zinc-800 text-zinc-400 hover:text-zinc-200">Anime</button>
+        </div>
+      </div>
+
+      <!-- Plugin List -->
+      <div class="flex-1 overflow-y-auto p-2 space-y-1" id="plugin-list">
+        <div class="p-4 text-center text-xs text-zinc-500">Loading plugins...</div>
+      </div>
+    </aside>
+
+    <!-- RIGHT MAIN PANEL: TEST CONSOLE & RESULTS -->
+    <main class="flex-1 flex flex-col overflow-y-auto h-[calc(100vh-4rem)] p-6 space-y-6">
+
+      <!-- SELECTED PLUGIN HEADER CARD -->
+      <div id="plugin-header-card" class="p-5 rounded-2xl bg-dark-900 border border-zinc-800 shadow-sm relative overflow-hidden">
+        <div class="flex items-start justify-between">
+          <div class="space-y-1">
+            <div class="flex items-center space-x-3">
+              <h2 id="active-plugin-name" class="text-xl font-bold text-white tracking-tight">Select a Plugin</h2>
+              <span id="active-plugin-version" class="px-2 py-0.5 text-xs font-mono rounded bg-zinc-800 text-zinc-400">v0.0.0</span>
+              <span id="active-plugin-category" class="px-2 py-0.5 text-xs font-semibold rounded bg-purple-950 text-purple-300 border border-purple-800">plugin</span>
+            </div>
+            <p id="active-plugin-id" class="text-xs font-mono text-zinc-500">com.community.none</p>
+            <p id="active-plugin-desc" class="text-sm text-zinc-300 max-w-3xl pt-1">Select any plugin from the sidebar to inspect its architecture, test live catalog feeds, and probe video stream sources.</p>
+          </div>
+
+          <div class="flex flex-col items-end space-y-2">
+            <div class="flex space-x-1.5" id="active-plugin-badges"></div>
+          </div>
+        </div>
+
+        <!-- SETTINGS COLLAPSIBLE -->
+        <div id="settings-container" class="mt-4 pt-4 border-t border-zinc-800/80 hidden">
+          <div class="flex items-center justify-between cursor-pointer" onclick="toggleSettingsPanel()">
+            <span class="text-xs font-bold text-purple-400 uppercase tracking-wider flex items-center space-x-1.5">
+              <span>⚙️ Plugin Settings Schema (<span id="settings-count">0</span>)</span>
+            </span>
+            <span id="settings-toggle-icon" class="text-zinc-500 text-xs font-mono">▼ Expand</span>
+          </div>
+          <div id="settings-fields" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mt-3 hidden"></div>
+        </div>
+      </div>
+
+      <!-- TEST CONSOLE CONTROLLER -->
+      <div class="p-5 rounded-2xl bg-dark-900 border border-zinc-800 space-y-4">
+        <div class="flex items-center justify-between">
+          <h3 class="text-sm font-bold text-zinc-200 uppercase tracking-wider flex items-center space-x-2">
+            <span>🎮 Test Controller</span>
+          </h3>
+          <!-- Presets -->
+          <div class="flex items-center space-x-2 text-xs">
+            <span class="text-zinc-500 font-medium">Presets:</span>
+            <button onclick="applyPreset('fightclub')" class="px-2.5 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300 transition">🥊 Fight Club</button>
+            <button onclick="applyPreset('deadpool')" class="px-2.5 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300 transition">⚔️ Deadpool</button>
+            <button onclick="applyPreset('breakingbad')" class="px-2.5 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300 transition">🧪 Breaking Bad</button>
+            <button onclick="applyPreset('sololeveling')" class="px-2.5 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300 transition">⛩️ Solo Leveling</button>
+          </div>
+        </div>
+
+        <!-- Inputs Row -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+          <div class="col-span-2">
+            <label class="block text-[11px] font-medium text-zinc-400 mb-1">Title Query</label>
+            <input type="text" id="input-title" value="Fight Club" class="w-full px-3 py-1.5 bg-dark-950 border border-zinc-800 rounded-lg text-xs text-white focus:outline-none focus:border-purple-500">
+          </div>
+          <div>
+            <label class="block text-[11px] font-medium text-zinc-400 mb-1">TMDb ID</label>
+            <input type="number" id="input-tmdb" value="550" class="w-full px-3 py-1.5 bg-dark-950 border border-zinc-800 rounded-lg text-xs text-white focus:outline-none focus:border-purple-500">
+          </div>
+          <div>
+            <label class="block text-[11px] font-medium text-zinc-400 mb-1">Type</label>
+            <select id="input-type" class="w-full px-3 py-1.5 bg-dark-950 border border-zinc-800 rounded-lg text-xs text-white focus:outline-none focus:border-purple-500">
+              <option value="movie">Movie</option>
+              <option value="tv">TV Series</option>
+              <option value="anime">Anime</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[11px] font-medium text-zinc-400 mb-1">Season</label>
+            <input type="number" id="input-season" value="1" class="w-full px-3 py-1.5 bg-dark-950 border border-zinc-800 rounded-lg text-xs text-white focus:outline-none focus:border-purple-500">
+          </div>
+          <div>
+            <label class="block text-[11px] font-medium text-zinc-400 mb-1">Episode</label>
+            <input type="number" id="input-episode" value="1" class="w-full px-3 py-1.5 bg-dark-950 border border-zinc-800 rounded-lg text-xs text-white focus:outline-none focus:border-purple-500">
+          </div>
+        </div>
+
+        <!-- Action Trigger Buttons -->
+        <div class="flex flex-wrap items-center gap-2.5 pt-1">
+          <button onclick="runFullSuite()" id="btn-run-full" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-lg shadow-emerald-950/40 transition flex items-center space-x-2">
+            <span>🚀 Run Full Usability Check</span>
+          </button>
+          <button onclick="runStreamsTest()" id="btn-run-streams" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold text-xs shadow-lg shadow-cyan-950/40 transition flex items-center space-x-2">
+            <span>⚡ Test Video Sources Finder</span>
+          </button>
+          <button onclick="runCatalogTest()" id="btn-run-catalog" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs shadow-lg shadow-purple-950/40 transition flex items-center space-x-2">
+            <span>📑 Test Catalog Feeds</span>
+          </button>
+          <button onclick="runSearchTest()" id="btn-run-search" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-bold text-xs shadow-lg shadow-amber-950/40 transition flex items-center space-x-2">
+            <span>🔍 Test Search</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- RESULTS TABS & PANELS -->
+      <div class="space-y-4 flex-1 flex flex-col">
+        <!-- Tab navigation -->
+        <div class="flex items-center space-x-6 border-b border-zinc-800 text-sm font-semibold text-zinc-400">
+          <button onclick="switchTab('verdict')" id="tab-btn-verdict" class="pb-3 tab-active transition">Usability Verdict</button>
+          <button onclick="switchTab('streams')" id="tab-btn-streams" class="pb-3 hover:text-zinc-200 transition flex items-center space-x-1.5">
+            <span>Video Sources</span>
+            <span id="badge-stream-count" class="px-1.5 py-0.2 rounded-full bg-zinc-800 text-[11px] text-zinc-400">0</span>
+          </button>
+          <button onclick="switchTab('catalog')" id="tab-btn-catalog" class="pb-3 hover:text-zinc-200 transition flex items-center space-x-1.5">
+            <span>Catalog Feeds</span>
+            <span id="badge-catalog-count" class="px-1.5 py-0.2 rounded-full bg-zinc-800 text-[11px] text-zinc-400">0</span>
+          </button>
+          <button onclick="switchTab('search')" id="tab-btn-search" class="pb-3 hover:text-zinc-200 transition">Search Hits</button>
+          <button onclick="switchTab('raw')" id="tab-btn-raw" class="pb-3 hover:text-zinc-200 transition font-mono text-xs">JSON Logs</button>
+        </div>
+
+        <!-- TAB 1: USABILITY VERDICT -->
+        <div id="tab-verdict" class="space-y-4">
+          <div id="verdict-banner" class="p-6 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-between">
+            <div class="space-y-1">
+              <span class="text-xs font-bold text-zinc-500 uppercase tracking-wider">Overall Readiness Score</span>
+              <h4 id="verdict-title" class="text-2xl font-black text-zinc-400">No Tests Run Yet</h4>
+              <p id="verdict-desc" class="text-xs text-zinc-400">Select a plugin and click "Run Full Usability Check" to evaluate capabilities, stream resolution, and HTTP 200 liveness.</p>
+            </div>
+            <div id="verdict-score" class="text-5xl font-black text-zinc-600 font-mono">--</div>
+          </div>
+
+          <div id="verdict-checks" class="space-y-2"></div>
+        </div>
+
+        <!-- TAB 2: VIDEO SOURCES FINDER -->
+        <div id="tab-streams" class="space-y-4 hidden">
+          <!-- Embedded Video Player Preview Modal/Card -->
+          <div id="player-preview-card" class="p-4 rounded-2xl bg-black border border-zinc-800 space-y-2 hidden">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center space-x-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping"></span>
+                <span id="player-stream-title" class="text-xs font-bold text-white">Live Stream Preview</span>
+              </div>
+              <button onclick="closePlayerPreview()" class="text-xs text-zinc-400 hover:text-white">✕ Close</button>
+            </div>
+            <div class="aspect-video w-full bg-zinc-950 rounded-xl overflow-hidden relative">
+              <video id="preview-video" controls autoplay class="w-full h-full object-contain"></video>
+            </div>
+          </div>
+
+          <div id="streams-list" class="space-y-3">
+            <div class="p-8 text-center text-sm text-zinc-500">Run "Test Video Sources Finder" to resolve direct streaming links.</div>
+          </div>
+        </div>
+
+        <!-- TAB 3: CATALOG FEEDS -->
+        <div id="tab-catalog" class="space-y-6 hidden">
+          <div id="catalog-content">
+            <div class="p-8 text-center text-sm text-zinc-500">Run "Test Catalog Feeds" to view source-offered home screen feeds.</div>
+          </div>
+        </div>
+
+        <!-- TAB 4: SEARCH HITS -->
+        <div id="tab-search" class="space-y-4 hidden">
+          <div id="search-content">
+            <div class="p-8 text-center text-sm text-zinc-500">Run "Test Search" to check provider search queries.</div>
+          </div>
+        </div>
+
+        <!-- TAB 5: JSON LOGS -->
+        <div id="tab-raw" class="hidden">
+          <pre id="raw-log" class="p-4 rounded-xl bg-black border border-zinc-800 text-xs font-mono text-emerald-400 overflow-x-auto max-h-[600px]">// Test responses and diagnostics will appear here</pre>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- SCRIPT LOGIC -->
+  <script>
+    let allPlugins = [];
+    let activePlugin = null;
+    let currentFilter = 'all';
+    let hlsInstance = null;
+
+    // 1. Initial Load
+    async function init() {
+      try {
+        const res = await fetch('/api/plugins');
+        const data = await res.json();
+        if (data.ok) {
+          allPlugins = data.plugins;
+          renderPluginList();
+          if (allPlugins.length > 0) {
+            selectPlugin(allPlugins[0].folder);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load plugins:', err);
+      }
+    }
+
+    // 2. Render Sidebar Plugin List
+    function renderPluginList() {
+      const search = (document.getElementById('plugin-search').value || '').toLowerCase();
+      const listEl = document.getElementById('plugin-list');
+
+      const filtered = allPlugins.filter(p => {
+        const matchesSearch = p.name.toLowerCase().includes(search) || p.id.toLowerCase().includes(search);
+        if (!matchesSearch) return false;
+        if (currentFilter === 'all') return true;
+        if (currentFilter === 'pro_plugin') return p.category === 'pro_plugin';
+        if (currentFilter === 'streams') return p.capabilities.hasStreams;
+        if (currentFilter === 'anime') return p.types.includes('anime');
+        return true;
+      });
+
+      document.getElementById('count-all').textContent = allPlugins.length;
+
+      listEl.innerHTML = filtered.map(p => {
+        const isSelected = activePlugin && activePlugin.folder === p.folder;
+        return `
+          <div onclick="selectPlugin('${p.folder}')" class="p-3 rounded-xl cursor-pointer transition ${
+            isSelected
+              ? 'bg-purple-900/40 border border-purple-600/60 text-white'
+              : 'hover:bg-zinc-800/60 text-zinc-300 border border-transparent'
+          }">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-xs tracking-tight truncate">${p.name}</span>
+              <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400">v${p.version}</span>
+            </div>
+            <div class="flex items-center space-x-1.5 mt-2">
+              ${p.capabilities.hasStreams ? '<span class="text-[10px] px-1.5 py-0.2 rounded bg-cyan-950 text-cyan-300 border border-cyan-800">Streams</span>' : ''}
+              ${p.capabilities.hasCatalog ? '<span class="text-[10px] px-1.5 py-0.2 rounded bg-purple-950 text-purple-300 border border-purple-800">Catalog</span>' : ''}
+              ${p.capabilities.hasSearch ? '<span class="text-[10px] px-1.5 py-0.2 rounded bg-amber-950 text-amber-300 border border-amber-800">Search</span>' : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function setFilter(cat) {
+      currentFilter = cat;
+      document.querySelectorAll('#filter-chips .chip').forEach(c => {
+        c.className = 'chip px-2.5 py-1 rounded-md bg-zinc-800 text-zinc-400 hover:text-zinc-200';
+      });
+      event.target.className = 'chip px-2.5 py-1 rounded-md bg-purple-600 text-white font-medium';
+      renderPluginList();
+    }
+
+    function filterPlugins() {
+      renderPluginList();
+    }
+
+    // 3. Select Active Plugin
+    function selectPlugin(folder) {
+      activePlugin = allPlugins.find(p => p.folder === folder);
+      if (!activePlugin) return;
+
+      renderPluginList();
+
+      document.getElementById('active-plugin-name').textContent = activePlugin.name;
+      document.getElementById('active-plugin-version').textContent = `v${activePlugin.version}`;
+      document.getElementById('active-plugin-category').textContent = activePlugin.category;
+      document.getElementById('active-plugin-id').textContent = activePlugin.id;
+      document.getElementById('active-plugin-desc').textContent = activePlugin.description;
+
+      const badgesEl = document.getElementById('active-plugin-badges');
+      badgesEl.innerHTML = `
+        ${activePlugin.types.map(t => `<span class="px-2 py-0.5 text-xs font-semibold rounded bg-zinc-800 text-zinc-300 uppercase">${t}</span>`).join('')}
+        ${activePlugin.languages.map(l => `<span class="px-2 py-0.5 text-xs font-semibold rounded bg-indigo-950 text-indigo-300 border border-indigo-800 uppercase">${l}</span>`).join('')}
+      `;
+
+      // Render Settings Schema
+      const settingsContainer = document.getElementById('settings-container');
+      const settingsFields = document.getElementById('settings-fields');
+      const schema = activePlugin.settingsSchema || [];
+
+      document.getElementById('settings-count').textContent = schema.length;
+
+      if (schema.length > 0) {
+        settingsContainer.classList.remove('hidden');
+        settingsFields.innerHTML = schema.map(s => {
+          if (s.type === 'boolean') {
+            return `
+              <div class="p-2.5 rounded-lg bg-dark-950 border border-zinc-800 flex items-center justify-between">
+                <div>
+                  <div class="text-xs font-semibold text-zinc-200">${s.label}</div>
+                  <div class="text-[10px] text-zinc-500">${s.description || ''}</div>
+                </div>
+                <input type="checkbox" id="setting-${s.key}" ${s.default !== false ? 'checked' : ''} class="w-4 h-4 accent-purple-600">
+              </div>
+            `;
+          }
+          if (s.type === 'select') {
+            return `
+              <div class="p-2.5 rounded-lg bg-dark-950 border border-zinc-800 space-y-1">
+                <div class="text-xs font-semibold text-zinc-200">${s.label}</div>
+                <select id="setting-${s.key}" class="w-full px-2 py-1 bg-zinc-900 border border-zinc-700 rounded text-xs text-white">
+                  ${(s.options || []).map(o => `<option value="${o.value}" ${o.value === s.default ? 'selected' : ''}>${o.label}</option>`).join('')}
+                </select>
+              </div>
+            `;
+          }
+          return `
+            <div class="p-2.5 rounded-lg bg-dark-950 border border-zinc-800 space-y-1">
+              <div class="text-xs font-semibold text-zinc-200">${s.label}</div>
+              <input type="${s.type === 'password' ? 'password' : 'text'}" id="setting-${s.key}" value="${s.default || ''}" placeholder="${s.placeholder || ''}" class="w-full px-2 py-1 bg-zinc-900 border border-zinc-700 rounded text-xs text-white">
+            </div>
+          `;
+        }).join('');
+      } else {
+        settingsContainer.classList.add('hidden');
+      }
+
+      // Reset verdict display
+      document.getElementById('verdict-title').textContent = `Ready to Test "${activePlugin.name}"`;
+      document.getElementById('verdict-score').textContent = '--';
+      document.getElementById('verdict-score').className = 'text-5xl font-black text-zinc-600 font-mono';
+      document.getElementById('verdict-banner').className = 'p-6 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-between';
+      document.getElementById('verdict-checks').innerHTML = '';
+    }
+
+    function toggleSettingsPanel() {
+      const panel = document.getElementById('settings-fields');
+      const icon = document.getElementById('settings-toggle-icon');
+      if (panel.classList.contains('hidden')) {
+        panel.classList.remove('hidden');
+        icon.textContent = '▲ Collapse';
+      } else {
+        panel.classList.add('hidden');
+        icon.textContent = '▼ Expand';
+      }
+    }
+
+    function getCollectedSettings() {
+      const settings = {};
+      if (!activePlugin || !activePlugin.settingsSchema) return settings;
+      for (const s of activePlugin.settingsSchema) {
+        const el = document.getElementById(`setting-${s.key}`);
+        if (!el) continue;
+        if (s.type === 'boolean') {
+          settings[s.key] = el.checked;
+        } else {
+          settings[s.key] = el.value;
+        }
+      }
+      return settings;
+    }
+
+    function getTestQuery() {
+      return {
+        title: document.getElementById('input-title').value.trim(),
+        tmdbId: Number(document.getElementById('input-tmdb').value) || 550,
+        type: document.getElementById('input-type').value,
+        season: Number(document.getElementById('input-season').value) || 1,
+        episode: Number(document.getElementById('input-episode').value) || 1,
+        isAnime: document.getElementById('input-type').value === 'anime',
+      };
+    }
+
+    function applyPreset(preset) {
+      if (preset === 'fightclub') {
+        document.getElementById('input-title').value = 'Fight Club';
+        document.getElementById('input-tmdb').value = 550;
+        document.getElementById('input-type').value = 'movie';
+      } else if (preset === 'deadpool') {
+        document.getElementById('input-title').value = 'Deadpool & Wolverine';
+        document.getElementById('input-tmdb').value = 533535;
+        document.getElementById('input-type').value = 'movie';
+      } else if (preset === 'breakingbad') {
+        document.getElementById('input-title').value = 'Breaking Bad';
+        document.getElementById('input-tmdb').value = 1396;
+        document.getElementById('input-type').value = 'tv';
+        document.getElementById('input-season').value = 1;
+        document.getElementById('input-episode').value = 1;
+      } else if (preset === 'sololeveling') {
+        document.getElementById('input-title').value = 'Solo Leveling';
+        document.getElementById('input-tmdb').value = 209867;
+        document.getElementById('input-type').value = 'anime';
+        document.getElementById('input-season').value = 1;
+        document.getElementById('input-episode').value = 1;
+      }
+    }
+
+    function switchTab(tabId) {
+      ['verdict', 'streams', 'catalog', 'search', 'raw'].forEach(t => {
+        document.getElementById(`tab-${t}`).classList.add('hidden');
+        document.getElementById(`tab-btn-${t}`).classList.remove('tab-active');
+      });
+      document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+      document.getElementById(`tab-btn-${tabId}`).classList.add('tab-active');
+    }
+
+    // 4. TEST EXECUTION HANDLERS
+    async function runFullSuite() {
+      if (!activePlugin) return;
+      const btn = document.getElementById('btn-run-full');
+      btn.innerHTML = '<span>⏳ Evaluating...</span>';
+      switchTab('verdict');
+
+      try {
+        const res = await fetch('/api/test/full', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            pluginId: activePlugin.folder,
+            query: getTestQuery(),
+            settings: getCollectedSettings(),
+          }),
+        });
+        const data = await res.json();
+        document.getElementById('raw-log').textContent = JSON.stringify(data, null, 2);
+
+        if (data.ok && data.report) {
+          renderVerdictReport(data.report);
+        }
+      } catch (err) {
+        alert('Suite execution error: ' + err.message);
+      } finally {
+        btn.innerHTML = '<span>🚀 Run Full Usability Check</span>';
+      }
+    }
+
+    function renderVerdictReport(report) {
+      const banner = document.getElementById('verdict-banner');
+      const scoreEl = document.getElementById('verdict-score');
+      const titleEl = document.getElementById('verdict-title');
+      const descEl = document.getElementById('verdict-desc');
+      const checksEl = document.getElementById('verdict-checks');
+
+      scoreEl.textContent = `${report.score}%`;
+
+      if (report.score >= 85) {
+        banner.className = 'p-6 rounded-2xl bg-emerald-950/40 border border-emerald-600/60 flex items-center justify-between shadow-lg shadow-emerald-950/40';
+        scoreEl.className = 'text-5xl font-black text-emerald-400 font-mono';
+        titleEl.textContent = report.verdict;
+        titleEl.className = 'text-xl font-bold text-emerald-300';
+      } else if (report.score >= 50) {
+        banner.className = 'p-6 rounded-2xl bg-amber-950/40 border border-amber-600/60 flex items-center justify-between shadow-lg shadow-amber-950/40';
+        scoreEl.className = 'text-5xl font-black text-amber-400 font-mono';
+        titleEl.textContent = report.verdict;
+        titleEl.className = 'text-xl font-bold text-amber-300';
+      } else {
+        banner.className = 'p-6 rounded-2xl bg-rose-950/40 border border-rose-600/60 flex items-center justify-between shadow-lg shadow-rose-950/40';
+        scoreEl.className = 'text-5xl font-black text-rose-400 font-mono';
+        titleEl.textContent = report.verdict;
+        titleEl.className = 'text-xl font-bold text-rose-300';
+      }
+
+      descEl.textContent = `Completed in ${report.totalDurationMs}ms across interface contract, live catalog, search, and video stream probes.`;
+
+      checksEl.innerHTML = report.checks.map(c => `
+        <div class="p-3.5 rounded-xl bg-dark-900 border ${c.passed ? 'border-zinc-800' : 'border-rose-900/50 bg-rose-950/10'} flex items-center justify-between">
+          <div class="flex items-center space-x-3">
+            <span class="text-base">${c.passed ? '✅' : '❌'}</span>
+            <div>
+              <div class="text-xs font-bold ${c.passed ? 'text-zinc-200' : 'text-rose-300'}">${c.name}</div>
+              <div class="text-[11px] text-zinc-400">${c.details || c.error || ''}</div>
+            </div>
+          </div>
+          <span class="text-[11px] font-mono px-2 py-0.5 rounded ${c.passed ? 'bg-emerald-950 text-emerald-400' : 'bg-rose-950 text-rose-400'} font-bold">
+            ${c.passed ? 'PASS' : 'FAIL'}
+          </span>
+        </div>
+      `).join('');
+
+      if (report.details?.streams?.count) {
+        document.getElementById('badge-stream-count').textContent = report.details.streams.count;
+      }
+      if (report.details?.catalog?.feedsCount) {
+        document.getElementById('badge-catalog-count').textContent = report.details.catalog.feedsCount;
+      }
+    }
+
+    async function runStreamsTest() {
+      if (!activePlugin) return;
+      const btn = document.getElementById('btn-run-streams');
+      btn.innerHTML = '<span>⚡ Resolving Streams...</span>';
+      switchTab('streams');
+
+      try {
+        const res = await fetch('/api/test/streams', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            pluginId: activePlugin.folder,
+            query: getTestQuery(),
+            settings: getCollectedSettings(),
+            probe: true,
+          }),
+        });
+        const data = await res.json();
+        document.getElementById('raw-log').textContent = JSON.stringify(data, null, 2);
+
+        if (data.ok) {
+          document.getElementById('badge-stream-count').textContent = data.count || 0;
+          renderStreams(data.streams || [], data.executionMs);
+        } else {
+          document.getElementById('streams-list').innerHTML = `
+            <div class="p-6 rounded-xl bg-rose-950/20 border border-rose-800 text-rose-300 text-xs">
+              ❌ Stream Resolution Failed: ${data.error}
+            </div>
+          `;
+        }
+      } catch (err) {
+        alert('Stream test error: ' + err.message);
+      } finally {
+        btn.innerHTML = '<span>⚡ Test Video Sources Finder</span>';
+      }
+    }
+
+    function renderStreams(streams, latency) {
+      const container = document.getElementById('streams-list');
+      if (streams.length === 0) {
+        container.innerHTML = `
+          <div class="p-8 text-center text-sm text-zinc-500">
+            ⚠️ No streams returned for this title query. Check if the provider supports this media type.
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = `
+        <div class="flex items-center justify-between pb-1 text-xs text-zinc-400">
+          <span>Found <b>${streams.length}</b> direct stream mirrors</span>
+          <span class="font-mono">Resolved in ${latency}ms</span>
+        </div>
+      ` + streams.map((s, idx) => {
+        const probe = s.probe;
+        const isLive = probe && probe.live;
+        const probeBadge = probe ? `
+          <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold ${
+            isLive ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-rose-950 text-rose-400 border border-rose-800'
+          }">
+            ${probe.status ? `HTTP ${probe.status}` : 'ERR'} • ${probe.latencyMs}ms
+          </span>
+        ` : '';
+
+        return `
+          <div class="p-4 rounded-xl bg-dark-900 border border-zinc-800 space-y-2.5">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center space-x-2.5">
+                <span class="text-xs font-bold text-white">${s.name || s.server || `Server ${idx + 1}`}</span>
+                <span class="px-2 py-0.5 text-[10px] font-bold rounded bg-purple-950 text-purple-300 uppercase">${s.quality || '1080p'}</span>
+                <span class="px-2 py-0.5 text-[10px] font-bold rounded bg-zinc-800 text-zinc-400 uppercase">${s.format || (s.isM3U8 ? 'HLS' : 'MP4')}</span>
+                ${probeBadge}
+              </div>
+
+              <div class="flex items-center space-x-2">
+                <button onclick="playStreamPreview('${encodeURIComponent(s.url)}', '${encodeURIComponent(s.headers?.Referer || '')}', '${s.name || s.server || ''}')" class="px-3 py-1 rounded bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold shadow transition">
+                  ▶ Play Preview
+                </button>
+                <button onclick="navigator.clipboard.writeText('${s.url}'); alert('Stream URL copied!')" class="px-2 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs transition">
+                  📋 Copy
+                </button>
+              </div>
+            </div>
+
+            <div class="p-2 rounded bg-black border border-zinc-800/80 text-[11px] font-mono text-zinc-400 truncate">
+              ${s.url}
+            </div>
+
+            ${s.subtitles && s.subtitles.length > 0 ? `
+              <div class="text-[11px] text-zinc-500 flex items-center space-x-1.5">
+                <span>💬 Subtitles:</span>
+                ${s.subtitles.map(sub => `<span class="px-1.5 py-0.2 rounded bg-zinc-800 text-zinc-300 text-[10px]">${sub.label || sub.lang}</span>`).join('')}
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function playStreamPreview(encUrl, encReferer, title) {
+      const url = decodeURIComponent(encUrl);
+      const referer = decodeURIComponent(encReferer);
+
+      const card = document.getElementById('player-preview-card');
+      const titleEl = document.getElementById('player-stream-title');
+      const video = document.getElementById('preview-video');
+
+      card.classList.remove('hidden');
+      titleEl.textContent = `Live Playback: ${title}`;
+
+      // Route through local streaming proxy to attach custom Referer
+      const proxiedUrl = `/proxy/stream?url=${encodeURIComponent(url)}&referer=${encodeURIComponent(referer)}`;
+
+      if (hlsInstance) {
+        hlsInstance.destroy();
+        hlsInstance = null;
+      }
+
+      if (url.includes('.m3u8') && Hls.isSupported()) {
+        hlsInstance = new Hls({ enableWorker: true });
+        hlsInstance.loadSource(proxiedUrl);
+        hlsInstance.attachMedia(video);
+        hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
+          video.play().catch(() => {});
+        });
+      } else {
+        video.src = proxiedUrl;
+        video.play().catch(() => {});
+      }
+
+      card.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function closePlayerPreview() {
+      const card = document.getElementById('player-preview-card');
+      const video = document.getElementById('preview-video');
+      video.pause();
+      if (hlsInstance) {
+        hlsInstance.destroy();
+        hlsInstance = null;
+      }
+      card.classList.add('hidden');
+    }
+
+    async function runCatalogTest() {
+      if (!activePlugin) return;
+      const btn = document.getElementById('btn-run-catalog');
+      btn.innerHTML = '<span>📑 Loading Feeds...</span>';
+      switchTab('catalog');
+
+      try {
+        const res = await fetch('/api/test/catalog', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            pluginId: activePlugin.folder,
+            page: 1,
+            settings: getCollectedSettings(),
+          }),
+        });
+        const data = await res.json();
+        document.getElementById('raw-log').textContent = JSON.stringify(data, null, 2);
+
+        if (data.ok) {
+          document.getElementById('badge-catalog-count').textContent = data.totalFeeds;
+          renderCatalog(data.feeds || [], data.executionMs);
+        } else {
+          document.getElementById('catalog-content').innerHTML = `
+            <div class="p-6 rounded-xl bg-amber-950/20 border border-amber-800 text-amber-300 text-xs">
+              ⚠️ Catalog Notice: ${data.error}
+            </div>
+          `;
+        }
+      } catch (err) {
+        alert('Catalog test error: ' + err.message);
+      } finally {
+        btn.innerHTML = '<span>📑 Test Catalog Feeds</span>';
+      }
+    }
+
+    function renderCatalog(feeds, latency) {
+      const container = document.getElementById('catalog-content');
+      if (feeds.length === 0) {
+        container.innerHTML = `<div class="p-8 text-center text-sm text-zinc-500">No catalog feeds returned.</div>`;
+        return;
+      }
+
+      container.innerHTML = `
+        <div class="flex items-center justify-between pb-2 text-xs text-zinc-400">
+          <span>Loaded <b>${feeds.length}</b> live catalog channels</span>
+          <span class="font-mono">${latency}ms</span>
+        </div>
+      ` + feeds.map(feed => `
+        <div class="space-y-3 p-4 rounded-2xl bg-dark-900 border border-zinc-800">
+          <div class="flex items-center justify-between">
+            <h4 class="text-sm font-bold text-white tracking-tight">${feed.title}</h4>
+            <span class="text-xs font-mono text-zinc-500">${feed.itemCount} items</span>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
+            ${(feed.sampleItems || []).map(item => `
+              <div class="group space-y-1.5 cursor-pointer">
+                <div class="aspect-[2/3] w-full rounded-xl bg-zinc-950 overflow-hidden relative border border-zinc-800/80 group-hover:border-purple-500/80 transition">
+                  ${item.poster ? `<img src="${item.poster}" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/150x225/18181b/a1a1aa?text=No+Poster'">` : '<div class="w-full h-full flex items-center justify-center text-zinc-600 text-xs">No Poster</div>'}
+                  ${item.qualityBadge ? `<span class="absolute top-1.5 left-1.5 px-1.5 py-0.5 text-[9px] font-bold rounded bg-black/80 text-purple-300 backdrop-blur">${item.qualityBadge}</span>` : ''}
+                </div>
+                <div class="text-[11px] font-semibold text-zinc-200 truncate">${item.title}</div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function runSearchTest() {
+      if (!activePlugin) return;
+      const btn = document.getElementById('btn-run-search');
+      btn.innerHTML = '<span>🔍 Searching...</span>';
+      switchTab('search');
+
+      const queryTerm = document.getElementById('input-title').value.trim() || 'Deadpool';
+
+      try {
+        const res = await fetch('/api/test/search', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            pluginId: activePlugin.folder,
+            query: queryTerm,
+            settings: getCollectedSettings(),
+          }),
+        });
+        const data = await res.json();
+        document.getElementById('raw-log').textContent = JSON.stringify(data, null, 2);
+
+        if (data.ok) {
+          renderSearchHits(data.results || [], data.executionMs, queryTerm);
+        } else {
+          document.getElementById('search-content').innerHTML = `
+            <div class="p-6 rounded-xl bg-amber-950/20 border border-amber-800 text-amber-300 text-xs">
+              ⚠️ Search Notice: ${data.error}
+            </div>
+          `;
+        }
+      } catch (err) {
+        alert('Search test error: ' + err.message);
+      } finally {
+        btn.innerHTML = '<span>🔍 Test Search</span>';
+      }
+    }
+
+    function renderSearchHits(results, latency, queryTerm) {
+      const container = document.getElementById('search-content');
+      if (results.length === 0) {
+        container.innerHTML = `<div class="p-8 text-center text-sm text-zinc-500">No results found for "${queryTerm}".</div>`;
+        return;
+      }
+
+      container.innerHTML = `
+        <div class="flex items-center justify-between pb-2 text-xs text-zinc-400">
+          <span>Found <b>${results.length}</b> matches for "${queryTerm}"</span>
+          <span class="font-mono">${latency}ms</span>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+          ${results.map(r => `
+            <div class="p-2.5 rounded-xl bg-dark-900 border border-zinc-800 space-y-2">
+              <div class="aspect-[2/3] w-full rounded-lg bg-zinc-950 overflow-hidden relative">
+                ${r.poster ? `<img src="${r.poster}" class="w-full h-full object-cover">` : '<div class="w-full h-full flex items-center justify-center text-zinc-600 text-xs">No Poster</div>'}
+              </div>
+              <div class="text-xs font-semibold text-white truncate">${r.title}</div>
+              <div class="text-[10px] text-zinc-500 truncate">${r.qualityBadge || r.type || ''}</div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    async function rebuildRepository() {
+      const btn = document.getElementById('btn-rebuild');
+      btn.textContent = '⏳ Packaging...';
+      try {
+        const res = await fetch('/api/build', { method: 'POST' });
+        const data = await res.json();
+        if (data.ok) {
+          alert(`🎉 Repository successfully rebuilt! ${data.manifest.plugins.length} plugins packaged.`);
+          init();
+        }
+      } catch (err) {
+        alert('Build error: ' + err.message);
+      } finally {
+        btn.textContent = '📦 Rebuild Repository';
+      }
+    }
+
+    // Launch
+    init();
+  </script>
+</body>
+</html>

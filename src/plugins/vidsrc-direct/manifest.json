@@ -1,0 +1,26 @@
+{
+  "id": "com.community.vidsrc-direct",
+  "name": "VidSrc Direct Stream (WASM/HLS)",
+  "version": "2.1.0",
+  "author": "Showrush Community",
+  "description": "Ad-free direct master.m3u8 HLS streams with 1080p/720p qualities & subtitles via in-memory WASM ChaCha20.",
+  "category": "plugin",
+  "types": [
+    "movie",
+    "tv"
+  ],
+  "languages": [
+    "en",
+    "all"
+  ],
+  "customBaseUrl": "https://data.vidsrcme.ru",
+  "settingsSchema": [
+    {
+      "key": "maxMirrors",
+      "label": "Max Stream Mirrors",
+      "type": "number",
+      "description": "Maximum number of redundant CDN mirrors to extract",
+      "default": 3
+    }
+  ]
+}

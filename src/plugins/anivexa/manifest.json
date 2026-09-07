@@ -1,0 +1,17 @@
+{
+  "id": "com.community.anivexa",
+  "name": "Anivexa Anime Engine Pro",
+  "version": "1.0.0",
+  "author": "Anivexa Community",
+  "description": "Ultimate Anime streaming powerhouse featuring real-time seasonal simulcasts, AniList GraphQL trending charts, genre exploration, and multi-server Sub/Dub HLS playback.",
+  "category": "pro_plugin",
+  "types": [
+    "anime"
+  ],
+  "languages": [
+    "ja",
+    "en",
+    "all"
+  ],
+  "settingsSchema": []
+}
