@@ -189,8 +189,20 @@ return {
   },
 
   async getSourceStreams(sourceId, episodeId) {
-    const targetUrl = episodeId || sourceId;
-    const fullUrl = targetUrl.startsWith('http') ? targetUrl : `https://asianc.to${targetUrl}`;
+    let targetUrl = episodeId || sourceId;
+    if (targetUrl && /^\d+$/.test(String(targetUrl).trim())) {
+      try {
+        const details = await this.getSourceDetails(sourceId);
+        const epNum = parseInt(String(targetUrl), 10);
+        const match = details?.episodes?.find((e) => e.episodeNumber === epNum);
+        if (match?.id) {
+          targetUrl = match.id;
+        }
+      } catch {}
+    }
+    const fullUrl = targetUrl.startsWith('http')
+      ? targetUrl
+      : `https://asianc.to${targetUrl.startsWith('/') ? '' : '/'}${targetUrl}`;
     try {
       const res = await Showrush.http.get(fullUrl);
       if (!res.ok || !res.data) return [];

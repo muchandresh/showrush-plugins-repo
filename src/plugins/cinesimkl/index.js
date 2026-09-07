@@ -130,9 +130,16 @@ return {
   },
 
   async getStreams(query) {
-    const { tmdbId, imdbId, title, type = 'movie', season = 1, episode = 1 } = query;
+    const { tmdbId, imdbId, title, type = 'movie', season = 1, episode = 1, sourceUrl } = query;
     let targetTmdbId = tmdbId;
     let targetImdbId = imdbId;
+
+    if (!targetImdbId && sourceUrl && String(sourceUrl).startsWith('tt')) {
+      targetImdbId = String(sourceUrl);
+    }
+    if (!targetImdbId && targetTmdbId && String(targetTmdbId).startsWith('tt')) {
+      targetImdbId = String(targetTmdbId);
+    }
 
     // 1. Resolve IMDb ID via Cinemeta if missing
     if (!targetImdbId && (title || targetTmdbId)) {
