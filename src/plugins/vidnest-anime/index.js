@@ -40,9 +40,11 @@ return {
       if (!anilistId) anilistId = tmdbId;
 
       const servers = [
-        { name: 'Vidnest Satoru (1080p)', url: `${VIDNEST_BASE}/satoru/${anilistId}/${epNum}` },
-        { name: 'Vidnest Pahe (Fast HLS)', url: `${VIDNEST_BASE}/aniwave/${anilistId}/${epNum}/sub/pahe` },
-        { name: 'Vidnest Anya (Multi-Quality)', url: `${VIDNEST_BASE}/aniwave/${anilistId}/${epNum}/sub/anya` },
+        { name: 'Vidnest Satoru [SUB] (1080p)', url: `${VIDNEST_BASE}/satoru/${anilistId}/${epNum}`, audio: 'sub', isDub: false },
+        { name: 'Vidnest Pahe [SUB] (Fast HLS)', url: `${VIDNEST_BASE}/aniwave/${anilistId}/${epNum}/sub/pahe`, audio: 'sub', isDub: false },
+        { name: 'Vidnest Anya [SUB] (Multi-Quality)', url: `${VIDNEST_BASE}/aniwave/${anilistId}/${epNum}/sub/anya`, audio: 'sub', isDub: false },
+        { name: 'Vidnest Pahe [DUB] (English)', url: `${VIDNEST_BASE}/aniwave/${anilistId}/${epNum}/dub/pahe`, audio: 'dub', isDub: true },
+        { name: 'Vidnest Anya [DUB] (English)', url: `${VIDNEST_BASE}/aniwave/${anilistId}/${epNum}/dub/anya`, audio: 'dub', isDub: true },
       ];
 
       const streams = [];
@@ -56,15 +58,17 @@ return {
 
             if (streamUrl) {
               streams.push({
-                id: `vidnest-${idx}-${Date.now()}`,
+                id: `vidnest-${srv.audio}-${idx}-${Date.now()}`,
                 name: srv.name,
-                server: `Vidnest Server ${idx + 1}`,
+                server: `Vidnest Server ${idx + 1} [${srv.audio.toUpperCase()}]`,
                 url: streamUrl,
                 quality: '1080p',
                 isM3U8: streamUrl.includes('.m3u8'),
                 headers: {
                   'Referer': 'https://vidnest.fun/',
                 },
+                audio: srv.audio,
+                isDub: srv.isDub,
                 subtitles: (json.subtitles || json.tracks || []).map((s) => ({
                   label: s.label || 'English',
                   lang: (s.lang || 'en').toLowerCase().slice(0, 2),

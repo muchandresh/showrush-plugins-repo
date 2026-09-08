@@ -416,11 +416,12 @@ return {
         },
       });
 
-      if (serversRes.ok && Array.isArray(serversRes.data)) {
+      const srvData = typeof serversRes.data === 'string' ? JSON.parse(serversRes.data) : serversRes.data;
+      if (serversRes.ok && Array.isArray(srvData)) {
         const epTargets = [];
         const epPad = String(epNum).padStart(2, '0');
 
-        for (const group of serversRes.data) {
+        for (const group of srvData) {
           const isDub = /dub/i.test(group.server_name || '');
           const audio = isDub ? 'Dub' : 'Sub';
 
@@ -447,8 +448,9 @@ return {
               }
             );
 
-            if (linksRes.ok && Array.isArray(linksRes.data)) {
-              for (const [idx, srv] of linksRes.data.entries()) {
+            const linksData = typeof linksRes.data === 'string' ? JSON.parse(linksRes.data) : linksRes.data;
+            if (linksRes.ok && Array.isArray(linksData)) {
+              for (const [idx, srv] of linksData.entries()) {
                 if (!srv.link) continue;
                 const origin = new URL(srv.link).origin;
 
@@ -468,6 +470,7 @@ return {
                       : `${origin}${raw.startsWith('/') ? '' : '/'}${raw}`;
 
                     if (!streams.some((s) => s.url === streamUrl)) {
+                      const isDub = target.audio.toLowerCase() === 'dub';
                       streams.push({
                         id: `anivexa-${target.audio.toLowerCase()}-${idx}-${Date.now()}`,
                         pluginId: 'com.community.anivexa',
@@ -479,6 +482,8 @@ return {
                         format: 'hls',
                         isM3U8: true,
                         headers: { Referer: `${origin}/` },
+                        audio: isDub ? 'dub' : 'sub',
+                        isDub,
                       });
                     }
                   }
@@ -534,40 +539,115 @@ return {
     // 1. Direct integration with self-hosted Anivexa-API (walterwhite-69/Anivexa-API)
     const apiBase = (this.settings?.anivexaApiUrl || this.settings?.apiUrl || (typeof Showrush !== 'undefined' && Showrush.settings?.anivexaApiUrl) || '').replace(/\/+$/, '');
     if (apiBase && anilistId) {
-      const providers = ['anidbapp', 'aniwaves', 'kickassanime', 'animegg', 'reanime', '2dhive'];
+      const providers = ['mkissa', 'reanime', 'anikoto', 'animegg', 'anineko', 'anidbapp', 'anizone', 'aniwaves', '2dhive', 'anibd', 'kickassanime', 'animedunya'];
       for (const prov of providers) {
-        try {
-          const dubRes = await Showrush.http.get(
-            `${apiBase}/watch/${prov}/${anilistId}/dub/${prov}-${episode}`,
-            { headers: { Accept: 'application/json' } }
-          );
-          if (dubRes.ok && dubRes.data) {
-            const dData = typeof dubRes.data === 'string' ? JSON.parse(dubRes.data) : dubRes.data;
-            if (Array.isArray(dData.streams)) {
-              for (const [sIdx, s] of dData.streams.entries()) {
-                if (s.url && !streams.some((x) => x.url === s.url)) {
-                  streams.push({
-                    id: `anivexa-api-dub-${prov}-${sIdx}-${Date.now()}`,
-                    pluginId: 'com.community.anivexa',
-                    pluginName: 'Anivexa Anime Engine Pro',
-                    name: `Anivexa ${s.server || prov} [DUB] (1080p)`,
-                    server: `Anivexa API [DUB]`,
-                    url: s.url,
-                    quality: s.quality || '1080p',
-                    format: s.type === 'hls' || s.url.includes('.m3u8') ? 'hls' : 'mp4',
-                    isM3U8: s.type === 'hls' || s.url.includes('.m3u8'),
-                    headers: s.referer ? { Referer: s.referer } : {},
-                  });
+        for (const cat of ['sub', 'dub']) {
+          try {
+            const catRes = await Showrush.http.get(
+              `${apiBase}/watch/${prov}/${anilistId}/${cat}/${prov}-${episode}`,
+              { headers: { Accept: 'application/json' } }
+            );
+            if (catRes.ok && catRes.data) {
+              const dData = typeof catRes.data === 'string' ? JSON.parse(catRes.data) : catRes.data;
+              if (Array.isArray(dData.streams)) {
+                for (const [sIdx, s] of dData.streams.entries()) {
+                  if (s.url && !streams.some((x) => x.url === s.url)) {
+                    const isDub = cat === 'dub';
+                    streams.push({
+                      id: `anivexa-api-${cat}-${prov}-${sIdx}-${Date.now()}`,
+                      pluginId: 'com.community.anivexa',
+                      pluginName: 'Anivexa Anime Engine Pro',
+                      name: `Anivexa ${s.server || prov} [${cat.toUpperCase()}] (${s.quality || '1080p'})`,
+                      server: `Anivexa API [${cat.toUpperCase()}]`,
+                      url: s.url,
+                      quality: s.quality || '1080p',
+                      format: s.type === 'hls' || s.url.includes('.m3u8') ? 'hls' : 'mp4',
+                      isM3U8: s.type === 'hls' || s.url.includes('.m3u8'),
+                      headers: s.referer ? { Referer: s.referer } : {},
+                      audio: isDub ? 'dub' : 'sub',
+                      isDub,
+                      subtitles: Array.isArray(s.subtitles) ? s.subtitles : undefined,
+                    });
+                  }
+                }
+              }
+            }
+          } catch {}
+        }
+      }
+    }
+
+    // 2. Integration with custom HiAnime API (ryanwtf7/hianime-api)
+    const hianimeBase = (this.settings?.hianimeApiUrl || (typeof Showrush !== 'undefined' && Showrush.settings?.hianimeApiUrl) || '').replace(/\/+$/, '');
+    if (hianimeBase && title) {
+      try {
+        const searchRes = await Showrush.http.get(`${hianimeBase}/api/v2/hianime/search?q=${encodeURIComponent(title)}`, {
+          headers: { Accept: 'application/json' },
+        });
+        if (searchRes.ok && searchRes.data) {
+          const sJson = typeof searchRes.data === 'string' ? JSON.parse(searchRes.data) : searchRes.data;
+          const animeId = sJson?.data?.animes?.[0]?.id;
+          if (animeId) {
+            const epRes = await Showrush.http.get(`${hianimeBase}/api/v2/hianime/anime/${animeId}/episodes`, {
+              headers: { Accept: 'application/json' },
+            });
+            if (epRes.ok && epRes.data) {
+              const epJson = typeof epRes.data === 'string' ? JSON.parse(epRes.data) : epRes.data;
+              const epItem = epJson?.data?.episodes?.find((e) => e.number === Number(episode));
+              if (epItem?.episodeId) {
+                const srvRes = await Showrush.http.get(`${hianimeBase}/api/v2/hianime/episode/servers?animeEpisodeId=${epItem.episodeId}`, {
+                  headers: { Accept: 'application/json' },
+                });
+                if (srvRes.ok && srvRes.data) {
+                  const srvJson = typeof srvRes.data === 'string' ? JSON.parse(srvRes.data) : srvRes.data;
+                  for (const cat of ['sub', 'dub']) {
+                    const catServers = srvJson?.data?.[cat] || [];
+                    for (const srv of catServers) {
+                      try {
+                        const streamRes = await Showrush.http.get(
+                          `${hianimeBase}/api/v2/hianime/episode/sources?animeEpisodeId=${epItem.episodeId}&server=${srv.serverName}&category=${cat}`,
+                          { headers: { Accept: 'application/json' } }
+                        );
+                        if (streamRes.ok && streamRes.data) {
+                          const strJson = typeof streamRes.data === 'string' ? JSON.parse(streamRes.data) : streamRes.data;
+                          const rawSources = strJson?.data?.sources || [];
+                          for (const [hIdx, src] of rawSources.entries()) {
+                            if (src.url && !streams.some((x) => x.url === src.url)) {
+                              const isDub = cat === 'dub';
+                              streams.push({
+                                id: `hianime-${cat}-${srv.serverName}-${hIdx}-${Date.now()}`,
+                                pluginId: 'com.community.anivexa',
+                                pluginName: 'HiAnime Engine',
+                                name: `HiAnime ${srv.serverName.toUpperCase()} [${cat.toUpperCase()}]`,
+                                server: `HiAnime CDN [${cat.toUpperCase()}]`,
+                                url: src.url,
+                                quality: '1080p',
+                                format: src.isM3U8 ? 'hls' : 'mp4',
+                                isM3U8: Boolean(src.isM3U8),
+                                audio: isDub ? 'dub' : 'sub',
+                                isDub,
+                                subtitles: (strJson?.data?.tracks || []).map((t) => ({
+                                  label: t.label || 'English',
+                                  lang: t.lang || 'en',
+                                  url: t.file || t.url || '',
+                                })),
+                              });
+                            }
+                          }
+                        }
+                      } catch {}
+                    }
+                  }
                 }
               }
             }
           }
-        } catch {}
-      }
+        }
+      } catch {}
     }
 
-    // 2. Guarantee English Dub / Multi-Audio streams if primary mirror only returned Japanese Sub
-    const hasDub = streams.some((s) => /dub/i.test(`${s.name || ''} ${s.server || ''}`));
+    // 3. Guarantee English Dub / Multi-Audio streams if primary mirror only returned Japanese Sub
+    const hasDub = streams.some((s) => s.isDub || /dub/i.test(`${s.name || ''} ${s.server || ''}`));
     if (!hasDub && (title || tmdbId || imdbId)) {
       let targetImdb = imdbId;
       if (!targetImdb && title) {
@@ -601,6 +681,8 @@ return {
                 pluginName: 'Anivexa Anime Engine Pro',
                 name: `Anivexa Master [DUB] • 1080p Server ${idx + 1}`,
                 server: `Anivexa CDN [DUB] ${idx + 1}`,
+                audio: 'dub',
+                isDub: true,
               });
             }
           }

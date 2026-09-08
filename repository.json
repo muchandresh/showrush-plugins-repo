@@ -207,6 +207,42 @@
       "pluginDir": "src/plugins/dramacool"
     },
     {
+      "id": "com.community.hianime",
+      "name": "HiAnime (Zoro / AniWatch)",
+      "version": "1.0.0",
+      "author": "Showrush Community",
+      "description": "HiAnime / AniWatch / Zoro scraper powered by ryanwtf7/hianime-api with discrete SUB & DUB server selection, HD-1 & MegaCloud mirrors, and AniList simulcast catalogs.",
+      "category": "pro_plugin",
+      "types": [
+        "anime"
+      ],
+      "languages": [
+        "ja",
+        "en",
+        "all"
+      ],
+      "settingsSchema": [
+        {
+          "key": "apiUrl",
+          "label": "HiAnime API Base URL",
+          "type": "url",
+          "description": "Self-hosted instance of ryanwtf7/hianime-api (optional)",
+          "placeholder": "https://hianime-api.example.com",
+          "default": ""
+        },
+        {
+          "key": "preferDub",
+          "label": "Prefer English Dubbed Audio",
+          "type": "boolean",
+          "description": "Prioritize DUB over SUB by default",
+          "default": false
+        }
+      ],
+      "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/src/plugins/hianime/index.js",
+      "manifestUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/src/plugins/hianime/manifest.json",
+      "pluginDir": "src/plugins/hianime"
+    },
+    {
       "id": "com.community.moviesdrive",
       "name": "MoviesDrive (Bollywood & OTT)",
       "version": "2.1.0",

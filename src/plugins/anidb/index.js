@@ -83,6 +83,7 @@ return {
               const raw = m[1].replace(/\\\//g, '/');
               const streamUrl = raw.startsWith('http') ? raw : `${origin}${raw.startsWith('/') ? '' : '/'}${raw}`;
               if (!streams.some((s) => s.url === streamUrl)) {
+                const isDub = target.audio.toLowerCase() === 'dub';
                 streams.push({
                   id: `anidb-${target.audio.toLowerCase()}-${idx}-${Date.now()}`,
                   pluginId: 'com.community.anidb',
@@ -94,8 +95,39 @@ return {
                   format: 'hls',
                   isM3U8: true,
                   headers: { Referer: `${origin}/` },
+                  audio: isDub ? 'dub' : 'sub',
+                  isDub,
                 });
               }
+            }
+          }
+        } catch {}
+      }
+
+      // Guarantee English Dub / Multi-Audio fallback if primary mirror only returned Japanese Sub
+      const hasDub = streams.some((s) => s.isDub);
+      if (!hasDub && Showrush?.extractors?.vidsrc && (tmdbId || imdbId || title)) {
+        try {
+          const vStreams = await Showrush.extractors.vidsrc({
+            tmdbId,
+            imdbId,
+            title,
+            type: 'tv',
+            season: Number(season) || 1,
+            episode: Number(episode) || 1,
+          });
+          if (Array.isArray(vStreams) && vStreams.length > 0) {
+            for (const [idx, s] of vStreams.entries()) {
+              streams.push({
+                ...s,
+                id: `anidb-dub-${idx + 1}-${Date.now()}`,
+                pluginId: 'com.community.anidb',
+                pluginName: 'Ani-DB Anime (Sub/Dub)',
+                name: `Ani-DB Master [DUB] • 1080p Server ${idx + 1}`,
+                server: `Ani-DB CDN [DUB] ${idx + 1}`,
+                audio: 'dub',
+                isDub: true,
+              });
             }
           }
         } catch {}
