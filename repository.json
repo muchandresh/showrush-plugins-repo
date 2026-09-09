@@ -6,60 +6,6 @@
   "description": "High-performance direct HLS, Anime, Indian Cinema, and Multi-Language streaming extensions powered by Showrush Extractor SDK.",
   "plugins": [
     {
-      "id": "com.community.anidb",
-      "name": "Ani-DB Anime (Sub/Dub)",
-      "version": "2.2.0",
-      "author": "Showrush Community",
-      "description": "Dedicated high-speed Anime streaming provider with AniList simulcast catalogs, SUB & DUB audio, and WebVTT captions.",
-      "category": "pro_plugin",
-      "types": [
-        "anime"
-      ],
-      "languages": [
-        "ja",
-        "en"
-      ],
-      "settingsSchema": [
-        {
-          "key": "preferDub",
-          "label": "Prefer English Dubbed Audio",
-          "type": "boolean",
-          "description": "Prioritize English DUB streams over Japanese SUB when both are available",
-          "default": false
-        },
-        {
-          "key": "anilistToken",
-          "label": "Custom AniList Token",
-          "type": "password",
-          "description": "Optional token for user watchlist synchronization",
-          "placeholder": "Enter AniList token..."
-        }
-      ],
-      "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/src/plugins/anidb/index.js",
-      "manifestUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/src/plugins/anidb/manifest.json",
-      "pluginDir": "src/plugins/anidb"
-    },
-    {
-      "id": "com.community.anivexa",
-      "name": "Anivexa Anime Engine Pro",
-      "version": "1.0.0",
-      "author": "Anivexa Community",
-      "description": "Ultimate Anime streaming powerhouse featuring real-time seasonal simulcasts, AniList GraphQL trending charts, genre exploration, and multi-server Sub/Dub HLS playback.",
-      "category": "pro_plugin",
-      "types": [
-        "anime"
-      ],
-      "languages": [
-        "ja",
-        "en",
-        "all"
-      ],
-      "settingsSchema": [],
-      "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/src/plugins/anivexa/index.js",
-      "manifestUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/src/plugins/anivexa/manifest.json",
-      "pluginDir": "src/plugins/anivexa"
-    },
-    {
       "id": "com.community.bollyflix",
       "name": "Bollyflix (Bollywood & OTT)",
       "version": "2.1.0",
@@ -183,64 +129,6 @@
       "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/src/plugins/cinetmdb/index.js",
       "manifestUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/src/plugins/cinetmdb/manifest.json",
       "pluginDir": "src/plugins/cinetmdb"
-    },
-    {
-      "id": "com.community.dramacool",
-      "name": "DramaCool (Asian Cinema)",
-      "version": "1.2.0",
-      "author": "Showrush Community",
-      "description": "Native streaming provider for Korean, Japanese & Chinese Dramas with live episode catalog feeds.",
-      "category": "pro_plugin",
-      "types": [
-        "tv",
-        "movie"
-      ],
-      "languages": [
-        "ko",
-        "zh",
-        "ja"
-      ],
-      "customBaseUrl": "https://dramacool.bg",
-      "settingsSchema": [],
-      "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/src/plugins/dramacool/index.js",
-      "manifestUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/src/plugins/dramacool/manifest.json",
-      "pluginDir": "src/plugins/dramacool"
-    },
-    {
-      "id": "com.community.hianime",
-      "name": "HiAnime (Zoro / AniWatch)",
-      "version": "1.0.0",
-      "author": "Showrush Community",
-      "description": "HiAnime / AniWatch / Zoro scraper powered by ryanwtf7/hianime-api with discrete SUB & DUB server selection, HD-1 & MegaCloud mirrors, and AniList simulcast catalogs.",
-      "category": "pro_plugin",
-      "types": [
-        "anime"
-      ],
-      "languages": [
-        "ja",
-        "en",
-        "all"
-      ],
-      "settingsSchema": [
-        {
-          "key": "apiUrl",
-          "label": "HiAnime API Base URL",
-          "type": "url",
-          "description": "Self-hosted instance of ryanwtf7/hianime-api (optional)",
-          "placeholder": "https://hianime-api.example.com",
-          "default": ""
-        },
-        {
-          "key": "preferDub",
-          "label": "Prefer English Dubbed Audio",
-          "type": "boolean",
-          "description": "Prioritize DUB over SUB by default",
-          "default": false
-        }
-      ],
-      "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/src/plugins/hianime/index.js",
-      "manifestUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/src/plugins/hianime/manifest.json",
-      "pluginDir": "src/plugins/hianime"
     },
     {
       "id": "com.community.moviesdrive",
@@ -393,25 +281,6 @@
       "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/src/plugins/vegamovies/index.js",
       "manifestUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/src/plugins/vegamovies/manifest.json",
       "pluginDir": "src/plugins/vegamovies"
-    },
-    {
-      "id": "com.community.vidnest-anime",
-      "name": "Vidnest Anime Multi-Server",
-      "version": "1.3.0",
-      "author": "Community",
-      "description": "Vidnest Anime streaming with AniList mapping and Satoru, Pahe, Anya, and Miko servers.",
-      "category": "plugin",
-      "types": [
-        "anime"
-      ],
-      "languages": [
-        "ja",
-        "en"
-      ],
-      "settingsSchema": [],
-      "scriptUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/src/plugins/vidnest-anime/index.js",
-      "manifestUrl": "https://raw.githubusercontent.com/muchandresh/showrush-plugins-repo/refs/heads/master/src/plugins/vidnest-anime/manifest.json",
-      "pluginDir": "src/plugins/vidnest-anime"
     },
     {
       "id": "com.community.vidsrc-direct",
